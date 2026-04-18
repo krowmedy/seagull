@@ -1,25 +1,15 @@
 import * as Phaser from 'phaser';
-
-class BootScene extends Phaser.Scene {
-  constructor() {
-    super({ key: 'BootScene' });
-  }
-
-  create() {
-    this.add.text(
-      this.scale.width / 2,
-      this.scale.height / 2,
-      'Seagull Game',
-      { fontSize: '32px', color: '#ffffff' }
-    ).setOrigin(0.5);
-  }
-}
+import { GameScene } from './scenes/GameScene.ts';
 
 new Phaser.Game({
   type: Phaser.AUTO,
   width: 960,
   height: 540,
   backgroundColor: '#1a1a2e',
-  scene: [BootScene],
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { x: 0, y: 0 }, debug: false },
+  },
+  scene: [GameScene],
   parent: 'app',
 });
