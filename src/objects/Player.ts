@@ -30,16 +30,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     (this.body as Phaser.Physics.Arcade.Body).setVelocityY(-this.config.flapVelocity);
   }
 
+  setHorizontalVelocity(vx: number): void {
+    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(vx);
+  }
+
   clampToBounds(): void {
-    const { height } = this.scene.scale;
+    const { width, height } = this.scene.scale;
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     if (this.y <= 0) {
       this.y = 0;
-      body.setVelocityY(0);
+      if (body.velocity.y < 0) body.setVelocityY(0);
     } else if (this.y >= height) {
       this.y = height;
-      body.setVelocityY(0);
+      if (body.velocity.y > 0) body.setVelocityY(0);
+    }
+
+    if (this.x <= 0) {
+      this.x = 0;
+      if (body.velocity.x < 0) body.setVelocityX(0);
+    } else if (this.x >= width) {
+      this.x = width;
+      if (body.velocity.x > 0) body.setVelocityX(0);
     }
   }
 }

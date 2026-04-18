@@ -4,6 +4,7 @@ export interface PlayerConfig {
   gravity: number;
   flapVelocity: number;
   maxFallSpeed: number;
+  horizontalSpeed: number;
 }
 
 export const seagullConfig: PlayerConfig = {
@@ -12,4 +13,5 @@ export const seagullConfig: PlayerConfig = {
   gravity: 600,
   flapVelocity: 350,
   maxFallSpeed: 500,
+  horizontalSpeed: 250,
 };
