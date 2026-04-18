@@ -35,22 +35,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   clampToBounds(): void {
-    const { width, height } = this.scene.scale;
+    const wb = this.scene.physics.world.bounds;
     const body = this.body as Phaser.Physics.Arcade.Body;
 
-    if (this.y <= 0) {
-      this.y = 0;
+    if (this.y <= wb.y) {
+      this.y = wb.y;
       if (body.velocity.y < 0) body.setVelocityY(0);
-    } else if (this.y >= height) {
-      this.y = height;
+    } else if (this.y >= wb.bottom) {
+      this.y = wb.bottom;
       if (body.velocity.y > 0) body.setVelocityY(0);
     }
 
-    if (this.x <= 0) {
-      this.x = 0;
+    if (this.x <= wb.x) {
+      this.x = wb.x;
       if (body.velocity.x < 0) body.setVelocityX(0);
-    } else if (this.x >= width) {
-      this.x = width;
+    } else if (this.x >= wb.right) {
+      this.x = wb.right;
       if (body.velocity.x > 0) body.setVelocityX(0);
     }
   }

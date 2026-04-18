@@ -27,6 +27,20 @@ This is the **single file to change** when tuning feel or swapping to a differen
 
 ---
 
+## `src/config/LevelConfig.ts`
+
+Defines the `LevelConfig` interface and the concrete `level1Config` object.
+
+| Field | Purpose |
+|---|---|
+| `worldWidth` | Total scrollable width of the level in pixels |
+| `worldHeight` | Height of the level — matches canvas height |
+| `bgTileKey` | Texture key for the repeating background tile |
+
+Swapping to a real LDtk level means adding a new `LevelConfig` entry and loading the map assets in `GameScene.preload()` — no changes to game logic.
+
+---
+
 ## `src/objects/Player.ts`
 
 The `Player` class extends `Phaser.Physics.Arcade.Sprite`. It owns everything about how the player character behaves physically.
@@ -44,7 +58,19 @@ Sets the body's Y velocity to `-config.flapVelocity` (upward).
 Sets the body's X velocity directly. Called every frame from `GameScene` — positive for right, negative for left, zero when no key is held (instant stop, no sliding).
 
 **`clampToBounds()`**
-Prevents the player leaving the canvas. Checks all four edges each frame and snaps position back if crossed. Velocity is only zeroed if it is directed *into* the boundary — this ensures a flap applied on the same frame the seagull hits the floor is not immediately cancelled.
+Prevents the player leaving the level. Reads boundaries from `scene.physics.world.bounds` (set by `GameScene` from `LevelConfig`) so it constrains to the full scrollable world, not just the visible canvas. Velocity is only zeroed if directed *into* the boundary — this ensures a flap applied on the same frame the seagull hits the floor is not immediately cancelled.
+
+---
+
+## `src/objects/Background.ts`
+
+Generates and renders the scrolling level background.
+
+**`static preloadTexture(scene, config)`**
+Draws a 128×540 repeating tile into the Phaser texture cache under `config.bgTileKey`. The tile depicts a simplified Edinburgh skyline: dark blue sky in the top 60%, dark building silhouettes with a few amber lit windows in the bottom 40%. Until real tileset art is available, this is the source of the background visuals.
+
+**`constructor(scene, config)`**
+Adds a single `TileSprite` spanning the full `worldWidth` × `worldHeight`. Depth is set to `-1` so it always renders behind all game objects.
 
 ---
 
@@ -52,6 +78,6 @@ Prevents the player leaving the canvas. Checks all four edges each frame and sna
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — generates the placeholder player texture via `Player.preloadTexture`.
-- **`create`** — spawns the `Player` at 17% across the canvas, vertically centred. Registers the Space key and cursor keys.
+- **`preload`** — generates placeholder textures for both the player (`Player.preloadTexture`) and the background (`Background.preloadTexture`).
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background` and `Player`, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
 - **`update`** — runs every frame. Checks for a Space `JustDown` event to trigger a flap (edge-triggered, not level-triggered). Reads left/right cursor state to set horizontal velocity, zeroing it when neither key is held. Calls `player.clampToBounds()` last so boundary enforcement always sees the final velocity for the frame.
