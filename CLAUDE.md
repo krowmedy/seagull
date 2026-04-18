@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Keeping docs up to date
+
+After any change that adds, removes, or meaningfully alters a source file's responsibilities, update `docs/source-guide.md` to reflect the new state. This includes: new files, deleted files, renamed methods, and changes to how data flows between files.
+
 ## Commands
 
 Node is installed via nvm4w at `C:\nvm4w\nodejs\`. In bash shells, prefix npm commands with the full path or use PowerShell:
