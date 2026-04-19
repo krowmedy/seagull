@@ -19,13 +19,19 @@ C:\nvm4w\nodejs\npm.cmd run build
 
 # Preview production build
 C:\nvm4w\nodejs\npm.cmd run preview
+
+# Run tests (Vitest)
+C:\nvm4w\nodejs\npm.cmd test
+
+# Run tests in watch mode
+C:\nvm4w\nodejs\npm.cmd run test:watch
 ```
 
-There are no tests or linter configured yet.
+There is no linter configured yet.
 
 ## Architecture
 
-**Stack:** Phaser 4 · TypeScript 6 · Vite 8. No test framework.
+**Stack:** Phaser 4 · TypeScript 6 · Vite 8 · Vitest 4.
 
 **Key TypeScript strictness flags** (`tsconfig.json`): `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax` (type-only imports must use `import type`). All imports to `.ts` files must include the `.ts` extension.
 
@@ -38,11 +44,20 @@ src/
   main.ts              # Phaser.Game bootstrap — scene list and physics config live here
   config/
     PlayerConfig.ts    # PlayerConfig interface + seagullConfig default
+    LevelConfig.ts     # LevelConfig + ParallaxLayer interfaces + level1Config
   objects/
     Player.ts          # Player class (extends Phaser.Physics.Arcade.Sprite)
+    Background.ts      # Multi-layer parallax background (TileSprite per layer)
   scenes/
     GameScene.ts       # Main gameplay scene
+  utils/
+    clamp.ts           # Pure boundary-clamp utility (no Phaser dep — unit tested)
+  __tests__/
+    clamp.test.ts
+    levelConfig.test.ts
 ```
+
+**Testability rule:** Phaser scene/sprite classes cannot be unit tested (require DOM/WebGL). Extract pure logic into `src/utils/` — no Phaser imports allowed there — and test those instead.
 
 ### Player swappability pattern
 

@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import type { PlayerConfig } from '../config/PlayerConfig.ts';
+import { clampToBounds as applyClamp } from '../utils/clamp.ts';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private readonly config: PlayerConfig;
@@ -37,21 +38,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   clampToBounds(): void {
     const wb = this.scene.physics.world.bounds;
     const body = this.body as Phaser.Physics.Arcade.Body;
-
-    if (this.y <= wb.y) {
-      this.y = wb.y;
-      if (body.velocity.y < 0) body.setVelocityY(0);
-    } else if (this.y >= wb.bottom) {
-      this.y = wb.bottom;
-      if (body.velocity.y > 0) body.setVelocityY(0);
-    }
-
-    if (this.x <= wb.x) {
-      this.x = wb.x;
-      if (body.velocity.x < 0) body.setVelocityX(0);
-    } else if (this.x >= wb.right) {
-      this.x = wb.right;
-      if (body.velocity.x > 0) body.setVelocityX(0);
-    }
+    const { pos, vel } = applyClamp(
+      { x: this.x, y: this.y },
+      { x: body.velocity.x, y: body.velocity.y },
+      { x: wb.x, y: wb.y, right: wb.right, bottom: wb.bottom },
+    );
+    this.x = pos.x;
+    this.y = pos.y;
+    body.setVelocityX(vel.x);
+    body.setVelocityY(vel.y);
   }
 }

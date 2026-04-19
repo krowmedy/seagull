@@ -6,6 +6,7 @@ import { level1Config } from '../config/LevelConfig.ts';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
+  private background!: Background;
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 
@@ -15,14 +16,14 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     Player.preloadTexture(this, seagullConfig);
-    Background.preloadTexture(this, level1Config);
+    Background.preloadTextures(this, level1Config);
   }
 
   create(): void {
     const { worldWidth, worldHeight } = level1Config;
 
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-    new Background(this, level1Config);
+    this.background = new Background(this, level1Config);
 
     this.player = new Player(this, worldWidth * 0.04, worldHeight / 2, seagullConfig);
 
@@ -48,5 +49,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.player.clampToBounds();
+    this.background.update(this.cameras.main.scrollX);
   }
 }

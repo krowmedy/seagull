@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell($env:PATH = \"C:\\\\nvm4w\\\\nodejs;\" + $env:PATH; cd C:\\\\Users\\\\rohit\\\\workspace\\\\seagull; & \"C:\\\\nvm4w\\\\nodejs\\\\npm.cmd\" run build 2>&1)"
+      "PowerShell($env:PATH = \"C:\\\\nvm4w\\\\nodejs;\" + $env:PATH; cd C:\\\\Users\\\\rohit\\\\workspace\\\\seagull; & \"C:\\\\nvm4w\\\\nodejs\\\\npm.cmd\" run build 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\nvm4w\\\\nodejs;\" + $env:PATH; cd C:\\\\Users\\\\rohit\\\\workspace\\\\seagull; & \"C:\\\\nvm4w\\\\nodejs\\\\npm.cmd\" install -D vitest 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\nvm4w\\\\nodejs;\" + $env:PATH; cd C:\\\\Users\\\\rohit\\\\workspace\\\\seagull; & \"C:\\\\nvm4w\\\\nodejs\\\\npm.cmd\" test 2>&1)"
     ]
   }
 }
