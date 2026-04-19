@@ -12,18 +12,30 @@ Entry point. Creates the `Phaser.Game` instance with the canvas size (960×540),
 
 ## `src/config/PlayerConfig.ts`
 
-Defines the `PlayerConfig` interface and the concrete `seagullConfig` object.
+Defines three interfaces and the concrete `seagullConfig` object.
+
+**`AnimationConfig`** — describes a single animation clip: `key`, `frameStart`, `frameEnd`, `frameRate`, `repeat` (-1 = loop).
+
+**`SpriteConfig`** — bundles a spritesheet with its optional animation. Fields: `textureKey`, `spritesheetPath`, `frameWidth`, `frameHeight`, and an optional `animation: AnimationConfig`. A sprite with no `animation` is treated as static.
+
+**`StateConfig`** — maps a state to a sprite and optional animation: `textureKey` (which sprite to display) and `animationKey` (which animation to play; absent means static).
+
+**`PlayerState`** — a `const` object + companion type representing the named states a character can be in (e.g. `Flying`, `Walking`). Using a `const` object rather than a TypeScript `enum` keeps the code compatible with the `erasableSyntaxOnly` compiler flag.
+
+**`PlayerConfig`** — the asset definition for a character (sprites and physics tuning). State logic is kept separate in a `Record<PlayerState, StateConfig>` passed alongside it.
 
 | Field | Purpose |
 |---|---|
-| `textureKey` | Key used to look up the sprite texture in the Phaser cache |
+| `sprites` | Array of `SpriteConfig` — all spritesheets this character uses |
 | `scale` | Uniform display scale applied to the sprite |
 | `gravity` | Downward acceleration (px/s²) applied to this character's physics body |
 | `flapVelocity` | Upward speed (px/s) applied instantly on each flap |
 | `maxFallSpeed` | Terminal velocity cap so the seagull doesn't accelerate forever |
 | `horizontalSpeed` | Speed (px/s) applied while a left/right arrow key is held |
 
-This is the **single file to change** when tuning feel or swapping to a different character. No game logic lives here.
+**`seagullStates`** — concrete `Record<PlayerState, StateConfig>` for the seagull. Add or update entries here to wire new states to sprites and animations.
+
+This is the **single file to change** when tuning feel, adding new states/animations, or swapping to a different character. No game logic lives here.
 
 ---
 
@@ -53,11 +65,17 @@ Pure TypeScript utility with no Phaser dependency. Exports `clampToBounds(pos, v
 
 The `Player` class extends `Phaser.Physics.Arcade.Sprite`. It owns everything about how the player character behaves physically.
 
-**`static preloadTexture(scene, config)`**
-Called during a scene's `preload` phase. Until real sprite art exists, it draws a white 48×32 ellipse using `scene.make.graphics()` and bakes it into the Phaser texture cache under `config.textureKey`. Swap this out later by loading a real spritesheet under the same key.
+**`static preloadTextures(scene, config)`**
+Called during a scene's `preload` phase. Iterates `config.sprites` and loads each as a spritesheet using the path and frame dimensions from its `SpriteConfig`.
 
-**`constructor(scene, x, y, config)`**
-Adds the sprite to the scene's display list and physics world, sets scale, and configures the Arcade body with the per-character gravity and terminal velocity from `config`.
+**`constructor(scene, x, y, config, states, initialState)`**
+Adds the sprite to the scene's display list and physics world, sets scale, and configures the Arcade body with the per-character gravity and terminal velocity from `config`. `states` is a `Record<TState, StateConfig>` and `initialState` sets the starting state. `Player` is generic over `TState` so call sites get type-safe `transitionTo()` calls.
+
+**`createAnimations()`**
+Iterates `config.sprites` and registers an animation for each sprite that has one defined. Then plays the animation for the initial state. Must be called from `GameScene.create()` after the player is constructed.
+
+**`transitionTo(state)`**
+Swaps the displayed texture and plays (or stops) the animation for the given state. No-ops if already in that state.
 
 **`flap()`**
 Sets the body's Y velocity to `-config.flapVelocity` (upward).
@@ -93,7 +111,7 @@ Called every frame from `GameScene`. Advances each tile's `tilePositionX` by `ca
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — generates placeholder textures for the player (`Player.preloadTexture`) and all background layers (`Background.preloadTextures`).
+- **`preload`** — loads the seagull spritesheet (`Player.preloadTexture`) and generates placeholder textures for all background layers (`Background.preloadTextures`).
 - **`create`** — expands the physics world to the full level dimensions, instantiates the `Background` and `Player`, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
 - **`update`** — runs every frame. Handles Space flap (edge-triggered) and left/right cursor movement. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
 

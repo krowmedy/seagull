@@ -1,16 +1,27 @@
 import * as Phaser from 'phaser';
-import type { PlayerConfig } from '../config/PlayerConfig.ts';
+import type { PlayerConfig, StateConfig } from '../config/PlayerConfig.ts';
 import { clampToBounds as applyClamp } from '../utils/clamp.ts';
 
-export class Player extends Phaser.Physics.Arcade.Sprite {
+export class Player<TState extends string> extends Phaser.Physics.Arcade.Sprite {
   private readonly config: PlayerConfig;
+  private readonly states: Record<TState, StateConfig>;
+  private currentState: TState;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, config: PlayerConfig) {
-    super(scene, x, y, config.textureKey);
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    config: PlayerConfig,
+    states: Record<TState, StateConfig>,
+    initialState: NoInfer<TState>,
+  ) {
+    super(scene, x, y, states[initialState].textureKey);
     this.config = config;
+    this.states = states;
+    this.currentState = initialState;
 
-    scene.add.existing(this);
-    scene.physics.add.existing(this);
+    scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
+    scene.physics.add.existing(this as unknown as Phaser.GameObjects.GameObject);
 
     this.setScale(config.scale);
 
@@ -19,12 +30,52 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setMaxVelocityY(config.maxFallSpeed);
   }
 
-  static preloadTexture(scene: Phaser.Scene, config: PlayerConfig): void {
-    const gfx = scene.make.graphics({ x: 0, y: 0 });
-    gfx.fillStyle(0xffffff);
-    gfx.fillEllipse(24, 16, 48, 32);
-    gfx.generateTexture(config.textureKey, 48, 32);
-    gfx.destroy();
+  static preloadTextures(scene: Phaser.Scene, config: PlayerConfig): void {
+    for (const sprite of config.sprites) {
+      scene.load.spritesheet(sprite.textureKey, sprite.spritesheetPath, {
+        frameWidth: sprite.frameWidth,
+        frameHeight: sprite.frameHeight,
+      });
+    }
+  }
+
+  createAnimations(): void {
+    for (const sprite of this.config.sprites) {
+      if (sprite.animation) {
+        const anim = sprite.animation;
+        this.scene.anims.create({
+          key: anim.key,
+          frames: this.scene.anims.generateFrameNumbers(sprite.textureKey, {
+            start: anim.frameStart,
+            end: anim.frameEnd,
+          }),
+          frameRate: anim.frameRate,
+          repeat: anim.repeat,
+        });
+      }
+    }
+
+    const initialStateConfig = this.states[this.currentState];
+    if (initialStateConfig.animationKey) {
+      this.play(initialStateConfig.animationKey);
+    }
+  }
+
+  transitionTo(state: TState): void {
+    if (state === this.currentState) return;
+    this.currentState = state;
+
+    const stateConfig = this.states[state];
+    this.setTexture(stateConfig.textureKey);
+    if (stateConfig.animationKey) {
+      this.play(stateConfig.animationKey);
+    } else {
+      this.stop();
+    }
+  }
+
+  getState(): TState {
+    return this.currentState;
   }
 
   flap(): void {
