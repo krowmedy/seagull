@@ -38,7 +38,7 @@ export const seagullConfig: PlayerConfig = {
   sprites: [
     {
       textureKey: 'seagull',
-      spritesheetPath: 'assets/seagull.png',
+      spritesheetPath: 'assets/seagull/seagull-flying.png',
       frameWidth: 309,
       frameHeight: 202,
       animation: { key: 'fly', frameStart: 0, frameEnd: 3, frameRate: 8, repeat: -1 },
