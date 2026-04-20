@@ -1,27 +1,28 @@
 import * as Phaser from 'phaser';
-import type { PlayerConfig, StateConfig } from '../config/PlayerConfig.ts';
+import type { PlayerConfig } from '../config/PlayerConfig.ts';
+import { type StateConfig, PlayerState } from '../config/PlayerState.ts';
 import { clampToBounds as applyClamp } from '../utils/clamp.ts';
 
-export class Player<TState extends string> extends Phaser.Physics.Arcade.Sprite {
+export class Player extends Phaser.Physics.Arcade.Sprite {
   private readonly config: PlayerConfig;
-  private readonly states: Record<TState, StateConfig>;
-  private currentState: TState;
+  private readonly states: Record<PlayerState, StateConfig>;
+  private currentState: PlayerState;
 
   constructor(
     scene: Phaser.Scene,
     x: number,
     y: number,
     config: PlayerConfig,
-    states: Record<TState, StateConfig>,
-    initialState: NoInfer<TState>,
+    states: Record<PlayerState, StateConfig>,
+    initialState: PlayerState,
   ) {
     super(scene, x, y, states[initialState].textureKey);
     this.config = config;
     this.states = states;
     this.currentState = initialState;
 
-    scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
-    scene.physics.add.existing(this as unknown as Phaser.GameObjects.GameObject);
+    scene.add.existing(this);
+    scene.physics.add.existing(this);
 
     this.setScale(config.scale);
 
@@ -61,7 +62,7 @@ export class Player<TState extends string> extends Phaser.Physics.Arcade.Sprite 
     }
   }
 
-  transitionTo(state: TState): void {
+  setPlayerState(state: PlayerState): void {
     if (state === this.currentState) return;
     this.currentState = state;
 
@@ -74,7 +75,7 @@ export class Player<TState extends string> extends Phaser.Physics.Arcade.Sprite 
     }
   }
 
-  getState(): TState {
+  getPlayerState(): PlayerState {
     return this.currentState;
   }
 

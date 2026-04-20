@@ -1,11 +1,12 @@
 import * as Phaser from 'phaser';
 import { Player } from '../objects/Player.ts';
 import { Background } from '../objects/Background.ts';
-import { seagullConfig, seagullStates, PlayerState } from '../config/PlayerConfig.ts';
+import { seagullConfig, seagullStates } from '../config/PlayerConfig.ts';
+import { PlayerState } from '../config/PlayerState.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 
 export class GameScene extends Phaser.Scene {
-  private player!: Player<PlayerState>;
+  private player!: Player;
   private background!: Background;
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;

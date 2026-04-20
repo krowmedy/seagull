@@ -1,3 +1,5 @@
+import { type StateConfig, PlayerState } from './PlayerState.ts';
+
 export interface AnimationConfig {
   key: string;
   frameStart: number;
@@ -14,10 +16,7 @@ export interface SpriteConfig {
   animation?: AnimationConfig;
 }
 
-export interface StateConfig {
-  textureKey: string;
-  animationKey?: string;
-}
+export { type StateConfig, PlayerState };
 
 export interface PlayerConfig {
   sprites: SpriteConfig[];
@@ -27,12 +26,6 @@ export interface PlayerConfig {
   maxFallSpeed: number;
   horizontalSpeed: number;
 }
-
-export const PlayerState = {
-  Flying: 'flying',
-  Walking: 'walking',
-} as const;
-export type PlayerState = typeof PlayerState[keyof typeof PlayerState];
 
 export const seagullConfig: PlayerConfig = {
   sprites: [

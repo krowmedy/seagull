@@ -20,8 +20,6 @@ Defines three interfaces and the concrete `seagullConfig` object.
 
 **`StateConfig`** — maps a state to a sprite and optional animation: `textureKey` (which sprite to display) and `animationKey` (which animation to play; absent means static).
 
-**`PlayerState`** — a `const` object + companion type representing the named states a character can be in (e.g. `Flying`, `Walking`). Using a `const` object rather than a TypeScript `enum` keeps the code compatible with the `erasableSyntaxOnly` compiler flag.
-
 **`PlayerConfig`** — the asset definition for a character (sprites and physics tuning). State logic is kept separate in a `Record<PlayerState, StateConfig>` passed alongside it.
 
 | Field | Purpose |
@@ -36,6 +34,16 @@ Defines three interfaces and the concrete `seagullConfig` object.
 **`seagullStates`** — concrete `Record<PlayerState, StateConfig>` for the seagull. Add or update entries here to wire new states to sprites and animations.
 
 This is the **single file to change** when tuning feel, adding new states/animations, or swapping to a different character. No game logic lives here.
+
+---
+
+## `src/config/PlayerState.ts`
+
+Defines `StateConfig` and `PlayerState` — kept separate from `PlayerConfig.ts` so state definitions can be imported without pulling in the full asset config.
+
+**`StateConfig`** — maps a state to a sprite and optional animation: `textureKey` (which sprite to display) and `animationKey` (which animation to play; absent means static).
+
+**`PlayerState`** — a `const` object + companion type representing the named states a character can be in (`Flying`, `Walking`). Uses a `const` object rather than a TypeScript `enum` to stay compatible with the `erasableSyntaxOnly` compiler flag. Call sites use `PlayerState.Flying`, `PlayerState.Walking`.
 
 ---
 
