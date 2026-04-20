@@ -10,40 +10,9 @@ Entry point. Creates the `Phaser.Game` instance with the canvas size (960×540),
 
 ---
 
-## `src/config/PlayerConfig.ts`
+## `src/config/CharacterState.ts`
 
-Defines three interfaces and the concrete `seagullConfig` object.
-
-**`AnimationConfig`** — describes a single animation clip: `key`, `frameStart`, `frameEnd`, `frameRate`, `repeat` (-1 = loop).
-
-**`SpriteConfig`** — bundles a spritesheet with its optional animation. Fields: `textureKey`, `spritesheetPath`, `frameWidth`, `frameHeight`, and an optional `animation: AnimationConfig`. A sprite with no `animation` is treated as static.
-
-**`StateConfig`** — maps a state to a sprite and optional animation: `textureKey` (which sprite to display) and `animationKey` (which animation to play; absent means static).
-
-**`PlayerConfig`** — the asset definition for a character (sprites and physics tuning). State logic is kept separate in a `Record<PlayerState, StateConfig>` passed alongside it.
-
-| Field | Purpose |
-|---|---|
-| `sprites` | Array of `SpriteConfig` — all spritesheets this character uses |
-| `scale` | Uniform display scale applied to the sprite |
-| `gravity` | Downward acceleration (px/s²) applied to this character's physics body |
-| `flapVelocity` | Upward speed (px/s) applied instantly on each flap |
-| `maxFallSpeed` | Terminal velocity cap so the seagull doesn't accelerate forever |
-| `horizontalSpeed` | Speed (px/s) applied while a left/right arrow key is held |
-
-**`seagullStates`** — concrete `Record<PlayerState, StateConfig>` for the seagull. Add or update entries here to wire new states to sprites and animations.
-
-This is the **single file to change** when tuning feel, adding new states/animations, or swapping to a different character. No game logic lives here.
-
----
-
-## `src/config/PlayerState.ts`
-
-Defines `StateConfig` and `PlayerState` — kept separate from `PlayerConfig.ts` so state definitions can be imported without pulling in the full asset config.
-
-**`StateConfig`** — maps a state to a sprite and optional animation: `textureKey` (which sprite to display) and `animationKey` (which animation to play; absent means static).
-
-**`PlayerState`** — a `const` object + companion type representing the named states a character can be in (`Flying`, `Walking`). Uses a `const` object rather than a TypeScript `enum` to stay compatible with the `erasableSyntaxOnly` compiler flag. Call sites use `PlayerState.Flying`, `PlayerState.Walking`.
+Defines `CharacterState` — a `const` object + companion type naming the states a character can be in (`Flying`, `Walking`). Uses a `const` object rather than a TypeScript `enum` to stay compatible with the `erasableSyntaxOnly` compiler flag. Call sites use `CharacterState.Flying`, `CharacterState.Walking`.
 
 ---
 
@@ -65,34 +34,78 @@ Swapping to a real LDtk level means adding a new `LevelConfig` entry and loading
 
 ## `src/utils/clamp.ts`
 
-Pure TypeScript utility with no Phaser dependency. Exports `clampToBounds(pos, vel, bounds)` which returns a new position and velocity after applying boundary constraints. Velocity is only zeroed when directed *into* a boundary — preserving a flap applied on the same frame the player touches the floor. Used by `Player.clampToBounds()` and covered by unit tests.
+Pure TypeScript utility with no Phaser dependency. Exports `clampToBounds(pos, vel, bounds)` which returns a new position and velocity after applying boundary constraints. Velocity is only zeroed when directed *into* a boundary — preserving a flap applied on the same frame the character touches the floor. Used by `Character.clampToBounds()` and covered by unit tests.
 
 ---
 
-## `src/objects/Player.ts`
+## `src/objects/Animation.ts`
 
-The `Player` class extends `Phaser.Physics.Arcade.Sprite`. It owns everything about how the player character behaves physically.
+The `Animation` class models a single animation clip: `key`, `frameStart`, `frameEnd`, `frameRate`, `repeat` (-1 = loop).
 
-**`static preloadTextures(scene, config)`**
-Called during a scene's `preload` phase. Iterates `config.sprites` and loads each as a spritesheet using the path and frame dimensions from its `SpriteConfig`.
+**`register(scene, textureKey)`**
+Registers the animation with the scene's animation manager, bound to the given texture. Called by `Sprite.registerAnimation`.
 
-**`constructor(scene, x, y, config, states, initialState)`**
-Adds the sprite to the scene's display list and physics world, sets scale, and configures the Arcade body with the per-character gravity and terminal velocity from `config`. `states` is a `Record<TState, StateConfig>` and `initialState` sets the starting state. `Player` is generic over `TState` so call sites get type-safe `transitionTo()` calls.
+---
+
+## `src/objects/Sprite.ts`
+
+The `Sprite` class represents a spritesheet asset and its optional `Animation`. Fields: `textureKey`, `spritesheetPath`, `frameWidth`, `frameHeight`, and an optional `animation`. A `Sprite` with no `animation` is treated as static.
+
+**`load(scene)`**
+Loads the spritesheet into the Phaser cache under `textureKey`. Called during the `preload` phase.
+
+**`registerAnimation(scene)`**
+Delegates to `animation.register(scene, textureKey)` if an animation is present; no-op otherwise.
+
+---
+
+## `src/objects/Character.ts`
+
+Abstract base class extending `Phaser.Physics.Arcade.Sprite`. Owns the physics body setup, state tracking, animation registration, and boundary clamping that every character shares. Concrete characters (e.g. `Seagull`) extend it and declare their own sprites, state mapping, and character-specific behaviours.
+
+Also exports `PhysicsParams` — a small interface (`gravity`, `maxFallSpeed`, `scale`) passed to the constructor, kept small so the subclass doesn't need a full config object.
+
+**`constructor(scene, x, y, initialSprite, initialState, physics)`**
+Calls `super()` with the initial sprite's texture key, registers the instance with the scene and physics world, and configures scale, gravity, and terminal velocity from `physics`.
+
+**`abstract spriteFor(state)`**
+Subclasses implement this to map a `CharacterState` to the `Sprite` that should be displayed. Replaces the previous `Record<PlayerState, StateConfig>` data structure with polymorphism.
+
+**`abstract allSprites` (getter)**
+Subclasses return every `Sprite` the character uses, so `Character.createAnimations` can register all their animations up front.
 
 **`createAnimations()`**
-Iterates `config.sprites` and registers an animation for each sprite that has one defined. Then plays the animation for the initial state. Must be called from `GameScene.create()` after the player is constructed.
+Iterates `allSprites` calling `registerAnimation` on each, then plays the animation for the initial state. Called from `GameScene.create()` after construction.
 
-**`transitionTo(state)`**
-Swaps the displayed texture and plays (or stops) the animation for the given state. No-ops if already in that state.
+**`setCharacterState(state)`**
+Swaps the displayed texture and plays (or stops) the animation for the given state. No-op if already in that state.
 
-**`flap()`**
-Sets the body's Y velocity to `-config.flapVelocity` (upward).
-
-**`setHorizontalVelocity(vx)`**
-Sets the body's X velocity directly. Called every frame from `GameScene` — positive for right, negative for left, zero when no key is held (instant stop, no sliding).
+**`getCharacterState()`**
+Returns the current state.
 
 **`clampToBounds()`**
-Thin wrapper around `clampToBounds` from `src/utils/clamp.ts`. Reads boundaries from `scene.physics.world.bounds` (set by `GameScene` from `LevelConfig`) so it constrains to the full scrollable world, not just the visible canvas.
+Thin wrapper around `clampToBounds` from `src/utils/clamp.ts`. Reads boundaries from `scene.physics.world.bounds` so it constrains to the full scrollable world, not just the visible canvas.
+
+---
+
+## `src/objects/Seagull.ts`
+
+Concrete `Character` subclass for the seagull. Holds its `Sprite` instances as private static fields (currently `FLYING`, with `WALKING` planned), plus module-level physics constants (`SEAGULL_PHYSICS`, `FLAP_VELOCITY`, `HORIZONTAL_SPEED`).
+
+**`static preload(scene)`**
+Loads every sprite this character uses. Called from `GameScene.preload()`.
+
+**`constructor(scene, x, y)`**
+Delegates to `Character`'s constructor with `Seagull.FLYING` as the initial sprite and `SEAGULL_PHYSICS` as the physics parameters. No other arguments needed.
+
+**`spriteFor(state)` / `allSprites`**
+Implements the abstract members from `Character`. The `switch` in `spriteFor` is the canonical place to wire a new state to a sprite.
+
+**`flap()`**
+Applies an upward impulse of `FLAP_VELOCITY`.
+
+**`moveLeft()` / `moveRight()` / `stopHorizontal()`**
+Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` just expresses intent (which key is held) without knowing the speed value.
 
 ---
 
@@ -119,9 +132,9 @@ Called every frame from `GameScene`. Advances each tile's `tilePositionX` by `ca
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — loads the seagull spritesheet (`Player.preloadTexture`) and generates placeholder textures for all background layers (`Background.preloadTextures`).
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background` and `Player`, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
-- **`update`** — runs every frame. Handles Space flap (edge-triggered) and left/right cursor movement. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
+- **`preload`** — loads seagull assets (`Seagull.preload`) and generates placeholder textures for all background layers (`Background.preloadTextures`).
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background` and `Seagull`, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
+- **`update`** — runs every frame. Handles Space flap (edge-triggered) and left/right cursor movement via `moveLeft` / `moveRight` / `stopHorizontal`. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
 
 ---
 

@@ -1,12 +1,10 @@
 import * as Phaser from 'phaser';
-import { Player } from '../objects/Player.ts';
+import { Seagull } from '../objects/Seagull.ts';
 import { Background } from '../objects/Background.ts';
-import { seagullConfig, seagullStates } from '../config/PlayerConfig.ts';
-import { PlayerState } from '../config/PlayerState.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 
 export class GameScene extends Phaser.Scene {
-  private player!: Player;
+  private player!: Seagull;
   private background!: Background;
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -16,7 +14,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    Player.preloadTextures(this, seagullConfig);
+    Seagull.preload(this);
     Background.preloadTextures(this, level1Config);
   }
 
@@ -27,7 +25,7 @@ export class GameScene extends Phaser.Scene {
     this.background = new Background(this, level1Config);
 
     const playerStartPosition = { x: worldWidth * 0.04, y: worldHeight / 2 };
-    this.player = new Player(this, playerStartPosition.x, playerStartPosition.y, seagullConfig, seagullStates, PlayerState.Flying);
+    this.player = new Seagull(this, playerStartPosition.x, playerStartPosition.y);
     this.player.createAnimations();
 
     const cameraLerpX = 0.08;
@@ -44,13 +42,12 @@ export class GameScene extends Phaser.Scene {
       this.player.flap();
     }
 
-    const { horizontalSpeed } = seagullConfig;
     if (this.cursors.left.isDown) {
-      this.player.setHorizontalVelocity(-horizontalSpeed);
+      this.player.moveLeft();
     } else if (this.cursors.right.isDown) {
-      this.player.setHorizontalVelocity(horizontalSpeed);
+      this.player.moveRight();
     } else {
-      this.player.setHorizontalVelocity(0);
+      this.player.stopHorizontal();
     }
 
     this.player.clampToBounds();
