@@ -25,8 +25,8 @@ export class Seagull extends Character {
   private static readonly WALKING = new Sprite(
     'seagull-walking',
     'assets/seagull/seagull-walking.png',
-    224,
-    203,
+    179,
+    162,
     new Animation('walk', 0, 3, 8, -1),
   );
 
