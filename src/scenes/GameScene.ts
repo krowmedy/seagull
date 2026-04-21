@@ -2,11 +2,13 @@ import * as Phaser from 'phaser';
 import { Seagull } from '../objects/Seagull.ts';
 import { Background } from '../objects/Background.ts';
 import { level1Config } from '../config/LevelConfig.ts';
+import { CharacterState } from '../config/CharacterState.ts';
 
 export class GameScene extends Phaser.Scene {
   private player!: Seagull;
   private background!: Background;
   private spaceKey!: Phaser.Input.Keyboard.Key;
+  private wKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 
   constructor() {
@@ -34,12 +36,22 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, cameraLerpX, cameraLerpY);
 
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.wKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     this.cursors = this.input.keyboard!.createCursorKeys();
   }
 
   update(): void {
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-      this.player.flap();
+    if (Phaser.Input.Keyboard.JustDown(this.wKey)) {
+      const next = this.player.getCharacterState() === CharacterState.Walking
+        ? CharacterState.Flying
+        : CharacterState.Walking;
+      this.player.setCharacterState(next);
+    }
+
+    if (this.player.getCharacterState() !== CharacterState.Walking) {
+      if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+        this.player.flap();
+      }
     }
 
     if (this.cursors.left.isDown) {

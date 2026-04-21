@@ -7,7 +7,7 @@ import { CharacterState } from '../config/CharacterState.ts';
 const SEAGULL_PHYSICS: PhysicsParams = {
   gravity: 600,
   maxFallSpeed: 500,
-  scale: 0.35,
+  scale: 0.45,
 };
 
 const FLAP_VELOCITY = 350;
@@ -22,6 +22,14 @@ export class Seagull extends Character {
     new Animation('fly', 0, 3, 8, -1),
   );
 
+  private static readonly WALKING = new Sprite(
+    'seagull-walking',
+    'assets/seagull/seagull-walking.png',
+    224,
+    203,
+    new Animation('walk', 0, 3, 8, -1),
+  );
+
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, Seagull.FLYING, CharacterState.Flying, SEAGULL_PHYSICS);
   }
@@ -31,16 +39,28 @@ export class Seagull extends Character {
       case CharacterState.Flying:
         return Seagull.FLYING;
       case CharacterState.Walking:
-        return Seagull.FLYING;
+        return Seagull.WALKING;
     }
   }
 
   protected get allSprites(): readonly Sprite[] {
-    return [Seagull.FLYING];
+    return [Seagull.FLYING, Seagull.WALKING];
   }
 
   static preload(scene: Phaser.Scene): void {
     Seagull.FLYING.load(scene);
+    Seagull.WALKING.load(scene);
+  }
+
+  override setCharacterState(state: CharacterState): void {
+    super.setCharacterState(state);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    if (state === CharacterState.Walking) {
+      body.setGravityY(0);
+      body.setVelocityY(0);
+    } else {
+      body.setGravityY(SEAGULL_PHYSICS.gravity);
+    }
   }
 
   flap(): void {
