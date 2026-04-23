@@ -109,6 +109,17 @@ Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` 
 
 ---
 
+## `src/objects/Surface.ts`
+
+The `Surface` class is a static physics body (a `Phaser.GameObjects.Rectangle` with a static Arcade body) spanning the bottom of the world. Module-level constants hold its height and placeholder colour.
+
+**`constructor(scene, worldWidth, worldHeight)`**
+Creates the rectangle centred along the bottom strip of the world, adds it to the scene's display list, and registers it as a static body so colliders can push dynamic bodies against it.
+
+Collision behaviour (what happens when the seagull lands on it) is wired up in `GameScene` via `this.physics.add.collider(player, surface, callback)` — the scene decides the reaction, not the surface itself.
+
+---
+
 ## `src/objects/Background.ts`
 
 Generates and renders the multi-layer parallax scrolling background.
@@ -133,8 +144,10 @@ Called every frame from `GameScene`. Advances each tile's `tilePositionX` by `ca
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
 - **`preload`** — loads seagull assets (`Seagull.preload`) and generates placeholder textures for all background layers (`Background.preloadTextures`).
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background` and `Seagull`, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
-- **`update`** — runs every frame. Handles Space flap (edge-triggered) and left/right cursor movement via `moveLeft` / `moveRight` / `stopHorizontal`. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches the seagull into `Walking` state on contact), then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
+- **`update`** — runs every frame. Handles Space — which switches the seagull from `Walking` back to `Flying` (if needed) and applies a flap — and left/right cursor movement via `moveLeft` / `moveRight` / `stopHorizontal`. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
+
+State transitions: landing on the `Surface` triggers `Walking` (via the collider callback); pressing Space triggers `Flying` (plus a flap). No more toggle key.
 
 ---
 
