@@ -1,21 +1,18 @@
 import * as Phaser from 'phaser';
-
-const SURFACE_HEIGHT = 60;
-const SURFACE_TEXTURE_KEY = 'surface-breakwater';
-const SURFACE_ASSET_PATH = 'assets/surface/wardie_bay_breakwater.png';
+import type { SurfaceConfig } from '../config/LevelConfig.ts';
 
 export class Surface extends Phaser.GameObjects.TileSprite {
-  static preload(scene: Phaser.Scene): void {
-    scene.load.image(SURFACE_TEXTURE_KEY, SURFACE_ASSET_PATH);
+  static preload(scene: Phaser.Scene, config: SurfaceConfig): void {
+    scene.load.image(config.tileKey, config.imagePath);
   }
 
-  constructor(scene: Phaser.Scene, worldWidth: number, worldHeight: number) {
+  constructor(scene: Phaser.Scene, worldWidth: number, worldHeight: number, config: SurfaceConfig) {
     const x = worldWidth / 2;
-    const y = worldHeight - SURFACE_HEIGHT/2;
-    super(scene, x, y, worldWidth, SURFACE_HEIGHT, SURFACE_TEXTURE_KEY);
+    const y = worldHeight - config.height / 2;
+    super(scene, x, y, worldWidth, config.height, config.tileKey);
 
-    const source = scene.textures.get(SURFACE_TEXTURE_KEY).getSourceImage();
-    const tileScale = SURFACE_HEIGHT / source.height;
+    const source = scene.textures.get(config.tileKey).getSourceImage();
+    const tileScale = config.height / source.height;
     this.setTileScale(tileScale);
 
     scene.add.existing(this);

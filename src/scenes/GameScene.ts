@@ -18,7 +18,7 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     Seagull.preload(this);
-    Surface.preload(this);
+    Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
   }
 
@@ -28,7 +28,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.background = new Background(this, level1Config);
 
-    this.surface = new Surface(this, worldWidth, worldHeight);
+    this.surface = new Surface(this, worldWidth, worldHeight, level1Config.surface);
 
     const playerStartPosition = { x: worldWidth * 0.04, y: worldHeight / 2 };
     this.player = new Seagull(this, playerStartPosition.x, playerStartPosition.y);
