@@ -18,6 +18,7 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     Seagull.preload(this);
+    Surface.preload(this);
     Background.preloadTextures(this, level1Config);
   }
 

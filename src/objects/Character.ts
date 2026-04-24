@@ -51,7 +51,13 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite {
     this.currentState = state;
 
     const sprite = this.spriteFor(state);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const prevBottom = body.bottom;
+
     this.setTexture(sprite.textureKey);
+    body.setSize(sprite.frameWidth, sprite.frameHeight, true);
+    this.y += prevBottom - body.bottom;
+
     if (sprite.animation) {
       this.play(sprite.animation.key);
     } else {

@@ -1,7 +1,9 @@
 export interface ParallaxLayer {
   tileKey: string;
+  imagePath: string;
   scrollFactor: number;
   depth: number;
+  tint?: number;
 }
 
 export interface LevelConfig {
@@ -14,9 +16,12 @@ export const level1Config: LevelConfig = {
   worldWidth: 3840,
   worldHeight: 540,
   layers: [
-    { tileKey: 'bg-sky',        scrollFactor: 0.0, depth: -4 },
-    { tileKey: 'bg-distant',    scrollFactor: 0.2, depth: -3 },
-    { tileKey: 'bg-cityscape',  scrollFactor: 0.5, depth: -2 },
-    { tileKey: 'bg-foreground', scrollFactor: 0.8, depth: -1 },
+    {
+      tileKey: 'bg-harbour',
+      imagePath: 'assets/background/wardie_bay_breakwater_background.png',
+      scrollFactor: 0.3,
+      depth: -1,
+      tint: 0xaaaaaa,
+    },
   ],
 };
