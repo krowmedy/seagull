@@ -48,6 +48,9 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, foods, (_player, foodObj) => {
       const food = foodObj as Food;
       this.player.points += food.points;
+      if (food.pickupSoundKey) {
+        this.sound.play(food.pickupSoundKey);
+      }
       food.destroy();
     });
 

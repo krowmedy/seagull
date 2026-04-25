@@ -28,7 +28,7 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, and `
 | `layers` | Ordered array of `ParallaxLayer` definitions (furthest to nearest) |
 | `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
 
-`FoodKind` describes a single food type — `textureKey`, `imagePath` (loaded via `scene.load.image` at preload time), optional `scale` (defaults to 1), and `points` (score awarded when collected). The `BREAD` kind currently uses `assets/food/bread-loaf.png`. Adding a new kind = drop the image in `public/assets/food/`, define a new `FoodKind` constant, and reference it in `level1Config.foods`. Each `FoodPlacement` pairs a `FoodKind` with a world-space position.
+`FoodKind` describes a single food type — `textureKey`, `imagePath` (loaded via `scene.load.image` at preload time), optional `scale` (defaults to 1), `points` (score awarded when collected), and an optional `pickupSound: SoundAsset` (`{ key, path }`) played by `GameScene` when the seagull collects the food. The `BREAD` kind currently uses `assets/food/bread-loaf.png` and the `assets/sounds/ding.mp3` pickup sound. Adding a new kind = drop the image (and optionally a sound) in `public/assets/`, define a new `FoodKind` constant, and reference it in `level1Config.foods`. Each `FoodPlacement` pairs a `FoodKind` with a world-space position.
 
 Each `ParallaxLayer` has a `tileKey` (texture cache key), `imagePath` (file under `public/` loaded at preload time), `scrollFactor` (0 = pinned, 1 = player plane), `depth` (negative values render behind game objects, lower = further back), and an optional `tint` (hex colour applied multiplicatively — useful for dulling a background so the foreground stands out).
 
@@ -120,12 +120,12 @@ Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` 
 The `Food` class is a pickup the seagull collects. Extends `Phaser.Physics.Arcade.Sprite` with a static Arcade body. The displayed texture, scale, and point value all come from the `FoodKind` passed in.
 
 **`static preload(scene, kind)`**
-Loads the kind's image into the Phaser cache under `kind.textureKey`. Called from `GameScene.preload()` for every kind referenced by the level. Phaser's loader deduplicates by key, so calling it multiple times for the same kind is harmless.
+Loads the kind's image into the Phaser cache under `kind.textureKey`, and — if `kind.pickupSound` is defined — loads the audio under that sound's key. Called from `GameScene.preload()` for every kind referenced by the level. Phaser's loader deduplicates by key, so calling it multiple times for the same kind is harmless.
 
 **`constructor(scene, x, y, kind)`**
-Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, registers the instance with the scene, and adds a static Arcade body so overlap detection works.
+Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, copies `kind.pickupSound?.key` into `pickupSoundKey`, registers the instance with the scene, and adds a static Arcade body so overlap detection works.
 
-When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points` and calls `food.destroy()`.
+When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` via `scene.sound.play` if set, and calls `food.destroy()`.
 
 ## `src/objects/Surface.ts`
 

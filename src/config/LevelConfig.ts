@@ -12,11 +12,17 @@ export interface SurfaceConfig {
   height: number;
 }
 
+export interface SoundAsset {
+  key: string;
+  path: string;
+}
+
 export interface FoodKind {
   textureKey: string;
   imagePath: string;
   scale?: number;
   points: number;
+  pickupSound?: SoundAsset;
 }
 
 export interface FoodPlacement {
@@ -30,6 +36,7 @@ const BREAD: FoodKind = {
   imagePath: 'assets/food/bread-loaf.png',
   scale: 0.7,
   points: 10,
+  pickupSound: { key: 'sfx-ding', path: 'assets/sounds/ding.mp3' },
 };
 
 export interface LevelConfig {
