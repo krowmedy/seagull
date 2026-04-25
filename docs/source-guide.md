@@ -18,12 +18,13 @@ Defines `CharacterState` — a `const` object + companion type naming the states
 
 ## `src/config/LevelConfig.ts`
 
-Defines the `ParallaxLayer` and `LevelConfig` interfaces, and the concrete `level1Config` object.
+Defines the `ParallaxLayer`, `SurfaceConfig`, and `LevelConfig` interfaces, and the concrete `level1Config` object.
 
 | Field | Purpose |
 |---|---|
 | `worldWidth` | Total scrollable width of the level in pixels |
 | `worldHeight` | Height of the level — matches canvas height |
+| `surface` | `SurfaceConfig` for this level's ground (texture key, image path, height in pixels) |
 | `layers` | Ordered array of `ParallaxLayer` definitions (furthest to nearest) |
 
 Each `ParallaxLayer` has a `tileKey` (texture cache key), `imagePath` (file under `public/` loaded at preload time), `scrollFactor` (0 = pinned, 1 = player plane), `depth` (negative values render behind game objects, lower = further back), and an optional `tint` (hex colour applied multiplicatively — useful for dulling a background so the foreground stands out).
@@ -113,13 +114,13 @@ Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` 
 
 ## `src/objects/Surface.ts`
 
-The `Surface` class is a static physics body (a `Phaser.GameObjects.TileSprite` with a static Arcade body) spanning the bottom of the world. It uses the `wardie_bay_breakwater.png` stone texture, tiled horizontally across the full `worldWidth`. Module-level constants hold its display height, texture key, and asset path.
+The `Surface` class is a static physics body (a `Phaser.GameObjects.TileSprite` with a static Arcade body) spanning the bottom of the world. The texture, image path, and display height all come from a `SurfaceConfig` (defined in `LevelConfig.ts`) so different levels can plug in different ground art without changing this class.
 
-**`static preload(scene)`**
-Loads the breakwater image into the Phaser cache. Called from `GameScene.preload()`.
+**`static preload(scene, config)`**
+Loads the surface image into the Phaser cache under `config.tileKey`. Called from `GameScene.preload()`.
 
-**`constructor(scene, worldWidth, worldHeight)`**
-Creates the tile sprite sized `worldWidth × SURFACE_HEIGHT`, lifted `SURFACE_BOTTOM_PADDING` pixels above the world bottom so the viewport doesn't clip the lower edge of the texture. Reads the source texture's native height and calls `setTileScale` so the texture is scaled uniformly to fit the target height while preserving aspect ratio — the pattern tiles naturally along X. Adds it to the scene's display list and registers it as a static body so colliders can push dynamic bodies against it.
+**`constructor(scene, worldWidth, worldHeight, config)`**
+Creates the tile sprite sized `worldWidth × config.height`, centred along the bottom strip of the world. Reads the source texture's native height and calls `setTileScale` so the texture is scaled uniformly to fit the target height while preserving aspect ratio — the pattern tiles naturally along X. Adds it to the scene's display list and registers it as a static body so colliders can push dynamic bodies against it.
 
 Collision behaviour (what happens when the seagull lands on it) is wired up in `GameScene` via `this.physics.add.collider(player, surface, callback)` — the scene decides the reaction, not the surface itself.
 
@@ -144,7 +145,7 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture (`Surface.preload`), and generates placeholder textures for all background layers (`Background.preloadTextures`).
+- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), and the parallax layer images (`Background.preloadTextures`).
 - **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches the seagull into `Walking` state on contact), then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
 - **`update`** — runs every frame. Handles Space — which switches the seagull from `Walking` back to `Flying` (if needed) and applies a flap — and left/right cursor movement via `moveLeft` / `moveRight` / `stopHorizontal`. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
 
