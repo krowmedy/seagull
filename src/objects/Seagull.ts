@@ -14,6 +14,8 @@ const FLAP_VELOCITY = 350;
 const HORIZONTAL_SPEED = 250;
 
 export class Seagull extends Character {
+  points = 0;
+
   private static readonly FLYING = new Sprite(
     'seagull-flying',
     'assets/seagull/seagull-flying.png',

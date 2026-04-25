@@ -18,7 +18,7 @@ Defines `CharacterState` — a `const` object + companion type naming the states
 
 ## `src/config/LevelConfig.ts`
 
-Defines the `ParallaxLayer`, `SurfaceConfig`, and `LevelConfig` interfaces, and the concrete `level1Config` object.
+Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, and `LevelConfig` interfaces, and the concrete `level1Config` object.
 
 | Field | Purpose |
 |---|---|
@@ -26,6 +26,9 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, and `LevelConfig` interfaces, and 
 | `worldHeight` | Height of the level — matches canvas height |
 | `surface` | `SurfaceConfig` for this level's ground (texture key, image path, height in pixels) |
 | `layers` | Ordered array of `ParallaxLayer` definitions (furthest to nearest) |
+| `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
+
+`FoodKind` describes a single food type — `textureKey`, `imagePath` (loaded via `scene.load.image` at preload time), optional `scale` (defaults to 1), and `points` (score awarded when collected). The `BREAD` kind currently uses `assets/food/bread-loaf.png`. Adding a new kind = drop the image in `public/assets/food/`, define a new `FoodKind` constant, and reference it in `level1Config.foods`. Each `FoodPlacement` pairs a `FoodKind` with a world-space position.
 
 Each `ParallaxLayer` has a `tileKey` (texture cache key), `imagePath` (file under `public/` loaded at preload time), `scrollFactor` (0 = pinned, 1 = player plane), `depth` (negative values render behind game objects, lower = further back), and an optional `tint` (hex colour applied multiplicatively — useful for dulling a background so the foreground stands out).
 
@@ -93,7 +96,7 @@ Thin wrapper around `clampToBounds` from `src/utils/clamp.ts`. Reads boundaries 
 
 ## `src/objects/Seagull.ts`
 
-Concrete `Character` subclass for the seagull. Holds its `Sprite` instances as private static fields (`FLYING`, `WALKING`, `STANDING`), plus module-level physics constants (`SEAGULL_PHYSICS`, `FLAP_VELOCITY`, `HORIZONTAL_SPEED`). The standing sprite is a single-frame animation (`stand`, frames 0–0) so movement can be added later without restructuring.
+Concrete `Character` subclass for the seagull. Holds its `Sprite` instances as private static fields (`FLYING`, `WALKING`, `STANDING`), plus module-level physics constants (`SEAGULL_PHYSICS`, `FLAP_VELOCITY`, `HORIZONTAL_SPEED`). The standing sprite is a single-frame animation (`stand`, frames 0–0) so movement can be added later without restructuring. Also exposes a public `points` field (initial value `0`) that `GameScene`'s food-overlap handler increments.
 
 **`static preload(scene)`**
 Loads every sprite this character uses. Called from `GameScene.preload()`.
@@ -111,6 +114,18 @@ Applies an upward impulse of `FLAP_VELOCITY`.
 Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` just expresses intent (which key is held) without knowing the speed value.
 
 ---
+
+## `src/objects/Food.ts`
+
+The `Food` class is a pickup the seagull collects. Extends `Phaser.Physics.Arcade.Sprite` with a static Arcade body. The displayed texture, scale, and point value all come from the `FoodKind` passed in.
+
+**`static preload(scene, kind)`**
+Loads the kind's image into the Phaser cache under `kind.textureKey`. Called from `GameScene.preload()` for every kind referenced by the level. Phaser's loader deduplicates by key, so calling it multiple times for the same kind is harmless.
+
+**`constructor(scene, x, y, kind)`**
+Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, registers the instance with the scene, and adds a static Arcade body so overlap detection works.
+
+When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points` and calls `food.destroy()`.
 
 ## `src/objects/Surface.ts`
 
@@ -145,8 +160,8 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), and the parallax layer images (`Background.preloadTextures`).
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a plain collider between the seagull and surface (no callback — state is derived in `update`), then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
+- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), and one image per food kind referenced in `level1Config.foods` (`Food.preload`).
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points` and destroys the food, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
 - **`update`** — runs every frame. Computes `onGround` (from `body.touching.down`/`blocked.down`) and key state, then sets the desired character state in priority order: Space-just-pressed → `Flying` + flap; airborne → `Flying`; on-ground with left/right held → `Walking`; on-ground with no movement keys → `Standing`. Then applies horizontal movement, calls `player.clampToBounds()`, and drives parallax via `background.update(camera.scrollX)`.
 
 State transitions are reactive: state is derived each frame from physics contact and key state rather than triggered by events. The `Standing` state requires the seagull to be on-ground *and* no movement keys held — pressing left, right, or space takes it out of `Standing`.

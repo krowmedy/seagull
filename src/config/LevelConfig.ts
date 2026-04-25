@@ -12,11 +12,32 @@ export interface SurfaceConfig {
   height: number;
 }
 
+export interface FoodKind {
+  textureKey: string;
+  imagePath: string;
+  scale?: number;
+  points: number;
+}
+
+export interface FoodPlacement {
+  kind: FoodKind;
+  x: number;
+  y: number;
+}
+
+const BREAD: FoodKind = {
+  textureKey: 'food-bread-loaf',
+  imagePath: 'assets/food/bread-loaf.png',
+  scale: 0.7,
+  points: 10,
+};
+
 export interface LevelConfig {
   worldWidth: number;
   worldHeight: number;
   surface: SurfaceConfig;
   layers: ParallaxLayer[];
+  foods: FoodPlacement[];
 }
 
 export const level1Config: LevelConfig = {
@@ -35,5 +56,13 @@ export const level1Config: LevelConfig = {
       depth: -1,
       tint: 0xaaaaaa,
     },
+  ],
+  foods: [
+    { kind: BREAD, x: 500, y: 463 },
+    { kind: BREAD, x: 900, y: 463 },
+    { kind: BREAD, x: 1500, y: 320 },
+    { kind: BREAD, x: 2200, y: 463 },
+    { kind: BREAD, x: 3000, y: 463 },
+    { kind: BREAD, x: 3500, y: 220 },
   ],
 };

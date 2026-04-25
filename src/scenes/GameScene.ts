@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { Seagull } from '../objects/Seagull.ts';
 import { Background } from '../objects/Background.ts';
 import { Surface } from '../objects/Surface.ts';
+import { Food } from '../objects/Food.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 
@@ -20,6 +21,9 @@ export class GameScene extends Phaser.Scene {
     Seagull.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
+    for (const placement of level1Config.foods) {
+      Food.preload(this, placement.kind);
+    }
   }
 
   create(): void {
@@ -38,6 +42,13 @@ export class GameScene extends Phaser.Scene {
       if (this.player.getCharacterState() !== CharacterState.Walking) {
         this.player.setCharacterState(CharacterState.Walking);
       }
+    });
+
+    const foods = level1Config.foods.map(f => new Food(this, f.x, f.y, f.kind));
+    this.physics.add.overlap(this.player, foods, (_player, foodObj) => {
+      const food = foodObj as Food;
+      this.player.points += food.points;
+      food.destroy();
     });
 
     const cameraLerpX = 0.08;
