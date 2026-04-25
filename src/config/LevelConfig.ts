@@ -45,6 +45,7 @@ export interface LevelConfig {
   surface: SurfaceConfig;
   layers: ParallaxLayer[];
   foods: FoodPlacement[];
+  backgroundMusic?: SoundAsset;
 }
 
 export const level1Config: LevelConfig = {
@@ -72,4 +73,8 @@ export const level1Config: LevelConfig = {
     { kind: BREAD, x: 3000, y: 463 },
     { kind: BREAD, x: 3500, y: 220 },
   ],
+  backgroundMusic: {
+    key: 'level1-music',
+    path: 'assets/sounds/level1_background.mp3',
+  },
 };

@@ -27,6 +27,7 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, and `
 | `surface` | `SurfaceConfig` for this level's ground (texture key, image path, height in pixels) |
 | `layers` | Ordered array of `ParallaxLayer` definitions (furthest to nearest) |
 | `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
+| `backgroundMusic` | Optional `SoundAsset` for the level's looping soundtrack |
 
 `FoodKind` describes a single food type — `textureKey`, `imagePath` (loaded via `scene.load.image` at preload time), optional `scale` (defaults to 1), `points` (score awarded when collected), and an optional `pickupSound: SoundAsset` (`{ key, path }`) played by `GameScene` when the seagull collects the food. The `BREAD` kind currently uses `assets/food/bread-loaf.png` and the `assets/sounds/ding.mp3` pickup sound. Adding a new kind = drop the image (and optionally a sound) in `public/assets/`, define a new `FoodKind` constant, and reference it in `level1Config.foods`. Each `FoodPlacement` pairs a `FoodKind` with a world-space position.
 
@@ -160,8 +161,8 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), and one image per food kind referenced in `level1Config.foods` (`Food.preload`).
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points` and destroys the food, then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
+- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points` and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) at `volume: 0.5`.
 - **`update`** — runs every frame. Computes `onGround` (from `body.touching.down`/`blocked.down`) and key state, then sets the desired character state in priority order: Space-just-pressed → `Flying` + flap; airborne → `Flying`; on-ground with left/right held → `Walking`; on-ground with no movement keys → `Standing`. Then applies horizontal movement, calls `player.clampToBounds()`, and drives parallax via `background.update(camera.scrollX)`.
 
 State transitions are reactive: state is derived each frame from physics contact and key state rather than triggered by events. The `Standing` state requires the seagull to be on-ground *and* no movement keys held — pressing left, right, or space takes it out of `Standing`.

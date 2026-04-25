@@ -24,6 +24,9 @@ export class GameScene extends Phaser.Scene {
     for (const placement of level1Config.foods) {
       Food.preload(this, placement.kind);
     }
+    if (level1Config.backgroundMusic) {
+      this.load.audio(level1Config.backgroundMusic.key, level1Config.backgroundMusic.path);
+    }
   }
 
   create(): void {
@@ -61,6 +64,10 @@ export class GameScene extends Phaser.Scene {
 
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.cursors = this.input.keyboard!.createCursorKeys();
+
+    if (level1Config.backgroundMusic) {
+      this.sound.play(level1Config.backgroundMusic.key, { loop: true, volume: 0.5 });
+    }
   }
 
   update(): void {
