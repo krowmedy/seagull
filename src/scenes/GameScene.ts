@@ -81,8 +81,13 @@ export class GameScene extends Phaser.Scene {
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.cursors = this.input.keyboard!.createCursorKeys();
     const textConfig = {
-      fontFamily: "courier new",
-      color: "#fff",
+      fontFamily: '"Bangers", "Comic Sans MS", cursive',
+      color: "#FFD23F",
+      stroke: "#1A1A2E",
+      strokeThickness: 4,
+      // Without padding the stroke is clipped by the text's render-target bounds
+      // on glyphs whose outline extends past the font's metric box (e.g. "0").
+      padding: { x: 6, y: 6 },
       resolution: 4,
     };
     this.scoreText = this.add.text(20, 20, `SCORE : ${this.player.points}`, {
