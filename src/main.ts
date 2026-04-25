@@ -10,7 +10,6 @@ new Phaser.Game({
   physics: {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 }, debug: DEBUG },
-    matter: {debug: DEBUG}
   },
   scene: [GameScene],
   parent: 'app',
