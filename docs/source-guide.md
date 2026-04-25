@@ -111,6 +111,9 @@ Delegates to `Character`'s constructor with `Seagull.FLYING` as the initial spri
 **`spriteFor(state)` / `allSprites`**
 Implements the abstract members from `Character`. The `switch` in `spriteFor` is the canonical place to wire a new state to a sprite.
 
+**`applyWalkingHitbox()` (private)**
+Resizes the Arcade body to the walking-sprite frame dimensions. Called from the constructor and from the `setCharacterState` override so the collision box stays the same in every state — the flying sprite has fully extended wings, which would otherwise inflate the hitbox far beyond the visible silhouette and cause spurious collisions with enemies.
+
 **`flap()`**
 Applies an upward impulse of `FLAP_VELOCITY`.
 

@@ -42,6 +42,12 @@ export class Seagull extends Character {
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, Seagull.FLYING, CharacterState.Flying, SEAGULL_PHYSICS);
+    this.applySmallerHitbox();
+  }
+
+  private applySmallerHitbox() {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setSize(179, 162);
   }
 
   protected spriteFor(state: CharacterState): Sprite {
@@ -72,6 +78,7 @@ export class Seagull extends Character {
       body.setGravityY(0);
       body.setVelocityY(0);
     } else {
+      this.applySmallerHitbox()
       body.setGravityY(SEAGULL_PHYSICS.gravity);
     }
   }

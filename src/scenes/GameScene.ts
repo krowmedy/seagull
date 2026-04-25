@@ -108,20 +108,21 @@ export class GameScene extends Phaser.Scene {
       }
       this.player.flap();
     }
-    console.log(this.cameras.main.x + ":" + this.cameras.main.y);
-    this.scoreText.setX(this.cameras.main.x + 20);
-    this.scoreText.setY(this.cameras.main.y + 20);
-    this.scoreText.update();
 
+    const moving = this.cursors.left.isDown || this.cursors.right.isDown;
     if (this.cursors.left.isDown) {
       this.player.moveLeft();
     } else if (this.cursors.right.isDown) {
       this.player.moveRight();
     } else {
       this.player.stopHorizontal();
-      if (this.player.getCharacterState() == CharacterState.Walking) {
-        this.player.setCharacterState(CharacterState.Standing);
-      }
+    }
+
+    const state = this.player.getCharacterState();
+    if (state === CharacterState.Standing && moving) {
+      this.player.setCharacterState(CharacterState.Walking);
+    } else if (state === CharacterState.Walking && !moving) {
+      this.player.setCharacterState(CharacterState.Standing);
     }
 
     for (const dog of this.dogs) {
