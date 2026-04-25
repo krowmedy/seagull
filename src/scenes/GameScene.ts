@@ -12,7 +12,7 @@ export class GameScene extends Phaser.Scene {
   private surface!: Surface;
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-
+  private scoreText!: Phaser.GameObjects.Text;
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -51,6 +51,8 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, foods, (_player, foodObj) => {
       const food = foodObj as Food;
       this.player.points += food.points;
+      this.scoreText.setText(`SCORE : ${this.player.points}`);
+
       if (food.pickupSoundKey) {
         this.sound.play(food.pickupSoundKey, { volume: food.pickupSoundVolume });
       }
@@ -64,6 +66,18 @@ export class GameScene extends Phaser.Scene {
 
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.cursors = this.input.keyboard!.createCursorKeys();
+    const textConfig = {
+      fontFamily: "courier new",
+      color: "#fff",
+      resolution: 4,
+    };
+    this.scoreText = this.add.text(20, 20, `SCORE : ${this.player.points}`, {
+      ...textConfig,
+      fontSize: 32,
+    });
+
+    // Anchor text to camera's viewport
+    this.scoreText.setScrollFactor(0);
 
     if (level1Config.backgroundMusic) {
       this.sound.play(level1Config.backgroundMusic.key, {
@@ -80,6 +94,10 @@ export class GameScene extends Phaser.Scene {
       }
       this.player.flap();
     }
+    console.log(this.cameras.main.x + ":" + this.cameras.main.y);
+    this.scoreText.setX(this.cameras.main.x + 20);
+    this.scoreText.setY(this.cameras.main.y + 20);
+    this.scoreText.update();
 
     if (this.cursors.left.isDown) {
       this.player.moveLeft();
