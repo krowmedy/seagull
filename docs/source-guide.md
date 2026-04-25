@@ -29,7 +29,9 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, and `
 | `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
 | `backgroundMusic` | Optional `SoundAsset` for the level's looping soundtrack |
 
-`FoodKind` describes a single food type — `textureKey`, `imagePath` (loaded via `scene.load.image` at preload time), optional `scale` (defaults to 1), `points` (score awarded when collected), and an optional `pickupSound: SoundAsset` (`{ key, path }`) played by `GameScene` when the seagull collects the food. The `BREAD` kind currently uses `assets/food/bread-loaf.png` and the `assets/sounds/ding.mp3` pickup sound. Adding a new kind = drop the image (and optionally a sound) in `public/assets/`, define a new `FoodKind` constant, and reference it in `level1Config.foods`. Each `FoodPlacement` pairs a `FoodKind` with a world-space position.
+`SoundAsset` is `{ key, path, volume? }` — `volume` is optional (Phaser defaults to 1.0 when omitted) and applied at playback time, so any sound configured through this interface can be tuned without code changes.
+
+`FoodKind` describes a single food type — `textureKey`, `imagePath` (loaded via `scene.load.image` at preload time), optional `scale` (defaults to 1), `points` (score awarded when collected), and an optional `pickupSound: SoundAsset` played by `GameScene` when the seagull collects the food. The `BREAD` kind currently uses `assets/food/bread-loaf.png` and the `assets/sounds/ding.mp3` pickup sound at `volume: 0.5` (dialled down so it doesn't overpower the background music). Adding a new kind = drop the image (and optionally a sound) in `public/assets/`, define a new `FoodKind` constant, and reference it in `level1Config.foods`. Each `FoodPlacement` pairs a `FoodKind` with a world-space position.
 
 Each `ParallaxLayer` has a `tileKey` (texture cache key), `imagePath` (file under `public/` loaded at preload time), `scrollFactor` (0 = pinned, 1 = player plane), `depth` (negative values render behind game objects, lower = further back), and an optional `tint` (hex colour applied multiplicatively — useful for dulling a background so the foreground stands out).
 
@@ -124,9 +126,9 @@ The `Food` class is a pickup the seagull collects. Extends `Phaser.Physics.Arcad
 Loads the kind's image into the Phaser cache under `kind.textureKey`, and — if `kind.pickupSound` is defined — loads the audio under that sound's key. Called from `GameScene.preload()` for every kind referenced by the level. Phaser's loader deduplicates by key, so calling it multiple times for the same kind is harmless.
 
 **`constructor(scene, x, y, kind)`**
-Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, copies `kind.pickupSound?.key` into `pickupSoundKey`, registers the instance with the scene, and adds a static Arcade body so overlap detection works.
+Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, copies `kind.pickupSound?.key` into `pickupSoundKey` and `kind.pickupSound?.volume` into `pickupSoundVolume`, registers the instance with the scene, and adds a static Arcade body so overlap detection works.
 
-When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` via `scene.sound.play` if set, and calls `food.destroy()`.
+When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` via `scene.sound.play(key, { volume: pickupSoundVolume })` if set (undefined volume falls back to Phaser's default of 1.0), and calls `food.destroy()`.
 
 ## `src/objects/Surface.ts`
 
@@ -162,7 +164,7 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
 - **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points` and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) at `volume: 0.5`.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
 - **`update`** — runs every frame. Computes `onGround` (from `body.touching.down`/`blocked.down`) and key state, then sets the desired character state in priority order: Space-just-pressed → `Flying` + flap; airborne → `Flying`; on-ground with left/right held → `Walking`; on-ground with no movement keys → `Standing`. Then applies horizontal movement, calls `player.clampToBounds()`, and drives parallax via `background.update(camera.scrollX)`.
 
 State transitions are reactive: state is derived each frame from physics contact and key state rather than triggered by events. The `Standing` state requires the seagull to be on-ground *and* no movement keys held — pressing left, right, or space takes it out of `Standing`.

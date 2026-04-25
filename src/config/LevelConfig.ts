@@ -15,6 +15,7 @@ export interface SurfaceConfig {
 export interface SoundAsset {
   key: string;
   path: string;
+  volume?: number;
 }
 
 export interface FoodKind {
@@ -36,7 +37,7 @@ const BREAD: FoodKind = {
   imagePath: 'assets/food/bread-loaf.png',
   scale: 0.7,
   points: 10,
-  pickupSound: { key: 'sfx-ding', path: 'assets/sounds/ding.mp3' },
+  pickupSound: { key: 'sfx-ding', path: 'assets/sounds/ding.mp3', volume: 0.01 },
 };
 
 export interface LevelConfig {
@@ -76,5 +77,6 @@ export const level1Config: LevelConfig = {
   backgroundMusic: {
     key: 'level1-music',
     path: 'assets/sounds/level1_background.mp3',
+    volume: 0.5,
   },
 };

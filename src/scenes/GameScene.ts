@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
       const food = foodObj as Food;
       this.player.points += food.points;
       if (food.pickupSoundKey) {
-        this.sound.play(food.pickupSoundKey);
+        this.sound.play(food.pickupSoundKey, { volume: food.pickupSoundVolume });
       }
       food.destroy();
     });
@@ -66,7 +66,10 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
 
     if (level1Config.backgroundMusic) {
-      this.sound.play(level1Config.backgroundMusic.key, { loop: true, volume: 0.5 });
+      this.sound.play(level1Config.backgroundMusic.key, {
+        loop: true,
+        volume: level1Config.backgroundMusic.volume,
+      });
     }
   }
 
