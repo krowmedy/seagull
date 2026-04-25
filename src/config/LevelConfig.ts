@@ -32,6 +32,11 @@ export interface FoodPlacement {
   y: number;
 }
 
+export interface EnemyPlacement {
+  x: number;
+  y: number;
+}
+
 const BREAD: FoodKind = {
   textureKey: 'food-bread-loaf',
   imagePath: 'assets/food/bread-loaf.png',
@@ -46,6 +51,7 @@ export interface LevelConfig {
   surface: SurfaceConfig;
   layers: ParallaxLayer[];
   foods: FoodPlacement[];
+  dogs: EnemyPlacement[];
   backgroundMusic?: SoundAsset;
 }
 
@@ -73,6 +79,10 @@ export const level1Config: LevelConfig = {
     { kind: BREAD, x: 2200, y: 463 },
     { kind: BREAD, x: 3000, y: 463 },
     { kind: BREAD, x: 3500, y: 220 },
+  ],
+  dogs: [
+    { x: 1200, y: 440 },
+    { x: 2600, y: 440 },
   ],
   backgroundMusic: {
     key: 'level1-music',

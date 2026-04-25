@@ -3,6 +3,7 @@ import { Seagull } from '../objects/Seagull.ts';
 import { Background } from '../objects/Background.ts';
 import { Surface } from '../objects/Surface.ts';
 import { Food } from '../objects/Food.ts';
+import { Dog } from '../objects/Dog.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 
@@ -10,6 +11,7 @@ export class GameScene extends Phaser.Scene {
   private player!: Seagull;
   private background!: Background;
   private surface!: Surface;
+  private dogs: Dog[] = [];
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
@@ -19,6 +21,7 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     Seagull.preload(this);
+    Dog.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
     for (const placement of level1Config.foods) {
@@ -45,6 +48,17 @@ export class GameScene extends Phaser.Scene {
       if (this.player.getCharacterState() !== CharacterState.Walking) {
         this.player.setCharacterState(CharacterState.Walking);
       }
+    });
+
+    this.dogs = level1Config.dogs.map(d => {
+      const dog = new Dog(this, d.x, d.y);
+      dog.registerAnimations();
+      return dog;
+    });
+    this.physics.add.collider(this.dogs, this.surface);
+    this.physics.add.overlap(this.player, this.dogs, () => {
+      this.sound.stopAll();
+      this.scene.restart();
     });
 
     const foods = level1Config.foods.map(f => new Food(this, f.x, f.y, f.kind));
@@ -108,6 +122,10 @@ export class GameScene extends Phaser.Scene {
       if (this.player.getCharacterState() == CharacterState.Walking) {
         this.player.setCharacterState(CharacterState.Standing);
       }
+    }
+
+    for (const dog of this.dogs) {
+      dog.update();
     }
 
     this.player.clampToBounds();

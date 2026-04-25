@@ -18,7 +18,7 @@ Defines `CharacterState` — a `const` object + companion type naming the states
 
 ## `src/config/LevelConfig.ts`
 
-Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, and `LevelConfig` interfaces, and the concrete `level1Config` object.
+Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, `EnemyPlacement`, and `LevelConfig` interfaces, and the concrete `level1Config` object.
 
 | Field | Purpose |
 |---|---|
@@ -27,6 +27,7 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, and `
 | `surface` | `SurfaceConfig` for this level's ground (texture key, image path, height in pixels) |
 | `layers` | Ordered array of `ParallaxLayer` definitions (furthest to nearest) |
 | `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
+| `dogs` | Array of `EnemyPlacement` ({ x, y }) defining where dog enemies spawn |
 | `backgroundMusic` | Optional `SoundAsset` for the level's looping soundtrack |
 
 `SoundAsset` is `{ key, path, volume? }` — `volume` is optional (Phaser defaults to 1.0 when omitted) and applied at playback time, so any sound configured through this interface can be tuned without code changes.
@@ -115,6 +116,26 @@ Applies an upward impulse of `FLAP_VELOCITY`.
 
 **`moveLeft()` / `moveRight()` / `stopHorizontal()`**
 Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` just expresses intent (which key is held) without knowing the speed value.
+
+---
+
+## `src/objects/Dog.ts`
+
+A `Dog` is the first enemy character. It extends `Phaser.Physics.Arcade.Sprite` directly (not `Character` — the dog only has one state, so the `CharacterState` machinery would be overkill). The dog walks left at a constant speed, has gravity so it rests on the surface, and triggers a scene restart when the seagull overlaps it.
+
+Module-level constants: `DOG_SCALE` (0.4), `DOG_GRAVITY` (600), `DOG_MAX_FALL_SPEED` (500), `DOG_WALK_SPEED` (80). The walking sprite is loaded from `assets/enemies/dog-walking.png` — 8 frames at 168×180 each, played at 10fps on a loop.
+
+**`static preload(scene)`**
+Loads the walking spritesheet. Called from `GameScene.preload()`.
+
+**`constructor(scene, x, y)`**
+Creates the sprite, registers it with the scene and physics world, applies scale/gravity/terminal velocity, and sets an initial leftward velocity.
+
+**`registerAnimations()`**
+Registers the walk animation with the scene and starts playing it. Called once after construction (must happen after the scene is fully wired).
+
+**`update()`**
+Reapplies the leftward velocity each frame so collisions with the surface or terrain don't bring the dog to a halt. Called from `GameScene.update()`.
 
 ---
 
