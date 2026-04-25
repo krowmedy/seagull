@@ -70,7 +70,28 @@ export class GameScene extends Phaser.Scene {
       if (food.pickupSoundKey) {
         this.sound.play(food.pickupSoundKey, { volume: food.pickupSoundVolume });
       }
-      food.destroy();
+
+      // Show the points collected as a result of picking up the food.
+      const popup = this.add.text(food.x, food.y, `+${food.points}`, {
+        fontFamily: '"Bangers", "Comic Sans MS", cursive',
+        color: '#FFD23F',
+        stroke: '#1A1A2E',
+        strokeThickness: 3,
+        fontSize: 24,
+        padding: { x: 4, y: 4 },
+        resolution: 4,
+      }).setOrigin(0.5);
+      // Fade out the text slowly before destroying it.
+      this.tweens.add({
+        targets: popup,
+        y: food.y - 40,
+        alpha: 0,
+        duration: 600,
+        ease: 'Quad.easeOut',
+        onComplete: () => popup.destroy(),
+      });
+
+      food.pickup();
     });
 
     const cameraLerpX = 0.08;

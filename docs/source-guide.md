@@ -150,9 +150,12 @@ The `Food` class is a pickup the seagull collects. Extends `Phaser.Physics.Arcad
 Loads the kind's image into the Phaser cache under `kind.textureKey`, and — if `kind.pickupSound` is defined — loads the audio under that sound's key. Called from `GameScene.preload()` for every kind referenced by the level. Phaser's loader deduplicates by key, so calling it multiple times for the same kind is harmless.
 
 **`constructor(scene, x, y, kind)`**
-Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, copies `kind.pickupSound?.key` into `pickupSoundKey` and `kind.pickupSound?.volume` into `pickupSoundVolume`, registers the instance with the scene, and adds a static Arcade body so overlap detection works.
+Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if specified, copies `kind.pickupSound?.key` into `pickupSoundKey` and `kind.pickupSound?.volume` into `pickupSoundVolume`, registers the instance with the scene, and adds a static Arcade body so overlap detection works. A looping yoyo tween bobs the sprite ±6px vertically (800ms, `Sine.easeInOut`) to make pickups visually pop; the static body stays at the original `y`, so the small visual offset doesn't affect overlap detection.
 
-When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` via `scene.sound.play(key, { volume: pickupSoundVolume })` if set (undefined volume falls back to Phaser's default of 1.0), and calls `food.destroy()`.
+**`pickup()`**
+Called by `GameScene` when the seagull overlaps this food. Disables the static body so the overlap callback won't fire again during the animation, kills the bob tween, then runs a 180ms scale-up (×1.6) + fade-to-zero tween that destroys the sprite on completion.
+
+When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` if set, spawns a `+N` floating score-popup text at the food's position (tweened up 40px and faded out over 600ms), then calls `food.pickup()` to play the absorb animation.
 
 ## `src/objects/Surface.ts`
 
