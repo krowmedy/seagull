@@ -42,6 +42,5 @@ export class Dog extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(): void {
-    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(-DOG_WALK_SPEED);
   }
 }
