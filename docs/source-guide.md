@@ -118,7 +118,7 @@ Resizes the Arcade body to the walking-sprite frame dimensions. Called from the 
 Applies an upward impulse of `FLAP_VELOCITY`.
 
 **`moveLeft()` / `moveRight()` / `stopHorizontal()`**
-Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` just expresses intent (which key is held) without knowing the speed value.
+Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` just expresses intent (which key is held) without knowing the speed value. `moveLeft` / `moveRight` also call `setFlipX` to mirror the sprite so it faces the direction of travel; `stopHorizontal` leaves the flip alone so the seagull keeps facing the last direction it moved.
 
 ---
 
@@ -189,9 +189,9 @@ The main (and currently only) gameplay scene. Follows the standard Phaser scene 
 
 - **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
 - **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
-- **`update`** — runs every frame. Computes `onGround` (from `body.touching.down`/`blocked.down`) and key state, then sets the desired character state in priority order: Space-just-pressed → `Flying` + flap; airborne → `Flying`; on-ground with left/right held → `Walking`; on-ground with no movement keys → `Standing`. Then applies horizontal movement, calls `player.clampToBounds()`, and drives parallax via `background.update(camera.scrollX)`.
+- **`update`** — runs every frame. Space-just-pressed → `Flying` + flap. Then applies horizontal movement based on left/right keys. After movement, swaps between `Standing` and `Walking` symmetrically: `Standing` + a movement key held → `Walking`; `Walking` + no movement key → `Standing`. Finally calls `player.clampToBounds()` and drives parallax via `background.update(camera.scrollX)`.
 
-State transitions are reactive: state is derived each frame from physics contact and key state rather than triggered by events. The `Standing` state requires the seagull to be on-ground *and* no movement keys held — pressing left, right, or space takes it out of `Standing`.
+The symmetric `Standing ↔ Walking` swap is needed because the surface collider only fires when the bodies are actively overlapping. Once the seagull is at rest on the surface (gravity zeroed in Walking/Standing), the collider stops firing — so we cannot rely on it to push the bird back into `Walking` once it has settled into `Standing`.
 
 ---
 

@@ -47,7 +47,7 @@ export class Seagull extends Character {
 
   private applySmallerHitbox() {
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(179, 162);
+    body.setSize(Seagull.STANDING.frameHeight, Seagull.STANDING.frameWidth);
   }
 
   protected spriteFor(state: CharacterState): Sprite {
@@ -78,6 +78,9 @@ export class Seagull extends Character {
       body.setGravityY(0);
       body.setVelocityY(0);
     } else {
+      // Make the hitbox smaller for the flying animation because the sprite is much
+      // bigger than the walking and standing animations. The larger sprite box
+      // would result in more unnatural collisions with enemies.
       this.applySmallerHitbox()
       body.setGravityY(SEAGULL_PHYSICS.gravity);
     }
@@ -89,10 +92,16 @@ export class Seagull extends Character {
 
   moveLeft(): void {
     (this.body as Phaser.Physics.Arcade.Body).setVelocityX(-HORIZONTAL_SPEED);
+    // The Seagull texture points right. Flip it across the X axis when it's pointing
+    // left.
+    this.setFlipX(true);
   }
 
   moveRight(): void {
     (this.body as Phaser.Physics.Arcade.Body).setVelocityX(HORIZONTAL_SPEED);
+    // Remove the flipX that was set from moveLeft, since the texture points right
+    // by default.
+    this.setFlipX(false);
   }
 
   stopHorizontal(): void {
