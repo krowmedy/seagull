@@ -28,9 +28,12 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite {
 
     this.setScale(physics.scale);
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setGravityY(physics.gravity);
-    body.setMaxVelocityY(physics.maxFallSpeed);
+    this.arcadeBody.setGravityY(physics.gravity);
+    this.arcadeBody.setMaxVelocityY(physics.maxFallSpeed);
+  }
+
+  protected get arcadeBody(): Phaser.Physics.Arcade.Body {
+    return this.body as Phaser.Physics.Arcade.Body;
   }
 
   protected abstract spriteFor(state: CharacterState): Sprite;
@@ -51,7 +54,7 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite {
     this.currentState = state;
 
     const sprite = this.spriteFor(state);
-    const body = this.body as Phaser.Physics.Arcade.Body;
+    const body = this.arcadeBody;
     const prevBottom = body.bottom;
 
     this.setTexture(sprite.textureKey);
@@ -71,7 +74,7 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite {
 
   clampToBounds(): void {
     const wb = this.scene.physics.world.bounds;
-    const body = this.body as Phaser.Physics.Arcade.Body;
+    const body = this.arcadeBody;
     const { pos, vel } = applyClamp(
       { x: this.x, y: this.y },
       { x: body.velocity.x, y: body.velocity.y },

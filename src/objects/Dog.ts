@@ -28,10 +28,14 @@ export class Dog extends Phaser.Physics.Arcade.Sprite {
 
     this.setScale(DOG_SCALE);
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
+    const body = this.arcadeBody;
     body.setGravityY(DOG_GRAVITY);
     body.setMaxVelocityY(DOG_MAX_FALL_SPEED);
     body.setVelocityX(-DOG_WALK_SPEED);
+  }
+
+  protected get arcadeBody(): Phaser.Physics.Arcade.Body {
+    return this.body as Phaser.Physics.Arcade.Body;
   }
 
   registerAnimations(): void {

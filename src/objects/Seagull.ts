@@ -46,8 +46,7 @@ export class Seagull extends Character {
   }
 
   private applySmallerHitbox() {
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(Seagull.STANDING.frameHeight, Seagull.STANDING.frameWidth);
+    this.arcadeBody.setSize(Seagull.STANDING.frameHeight, Seagull.STANDING.frameWidth);
   }
 
   protected spriteFor(state: CharacterState): Sprite {
@@ -73,7 +72,7 @@ export class Seagull extends Character {
 
   override setCharacterState(state: CharacterState): void {
     super.setCharacterState(state);
-    const body = this.body as Phaser.Physics.Arcade.Body;
+    const body = this.arcadeBody;
     if (state === CharacterState.Walking || state === CharacterState.Standing) {
       body.setGravityY(0);
       body.setVelocityY(0);
@@ -87,24 +86,24 @@ export class Seagull extends Character {
   }
 
   flap(): void {
-    (this.body as Phaser.Physics.Arcade.Body).setVelocityY(-FLAP_VELOCITY);
+    this.arcadeBody.setVelocityY(-FLAP_VELOCITY);
   }
 
   moveLeft(): void {
-    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(-HORIZONTAL_SPEED);
+    this.arcadeBody.setVelocityX(-HORIZONTAL_SPEED);
     // The Seagull texture points right. Flip it across the X axis when it's pointing
     // left.
     this.setFlipX(true);
   }
 
   moveRight(): void {
-    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(HORIZONTAL_SPEED);
+    this.arcadeBody.setVelocityX(HORIZONTAL_SPEED);
     // Remove the flipX that was set from moveLeft, since the texture points right
     // by default.
     this.setFlipX(false);
   }
 
   stopHorizontal(): void {
-    (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
+    this.arcadeBody.setVelocityX(0);
   }
 }
