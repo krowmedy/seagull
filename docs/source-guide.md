@@ -12,7 +12,7 @@ Entry point. Creates the `Phaser.Game` instance with the canvas size (960×540),
 
 ## `src/config/CharacterState.ts`
 
-Defines `CharacterState` — a `const` object + companion type naming the states a character can be in (`Flying`, `Walking`). Uses a `const` object rather than a TypeScript `enum` to stay compatible with the `erasableSyntaxOnly` compiler flag. Call sites use `CharacterState.Flying`, `CharacterState.Walking`.
+Defines `CharacterState` — a `const` object + companion type naming the states a character can be in (`Flying`, `Walking`, `Standing`). Uses a `const` object rather than a TypeScript `enum` to stay compatible with the `erasableSyntaxOnly` compiler flag. Call sites use `CharacterState.Flying`, `CharacterState.Walking`, `CharacterState.Standing`.
 
 ---
 
@@ -93,7 +93,7 @@ Thin wrapper around `clampToBounds` from `src/utils/clamp.ts`. Reads boundaries 
 
 ## `src/objects/Seagull.ts`
 
-Concrete `Character` subclass for the seagull. Holds its `Sprite` instances as private static fields (currently `FLYING`, with `WALKING` planned), plus module-level physics constants (`SEAGULL_PHYSICS`, `FLAP_VELOCITY`, `HORIZONTAL_SPEED`).
+Concrete `Character` subclass for the seagull. Holds its `Sprite` instances as private static fields (`FLYING`, `WALKING`, `STANDING`), plus module-level physics constants (`SEAGULL_PHYSICS`, `FLAP_VELOCITY`, `HORIZONTAL_SPEED`). The standing sprite is a single-frame animation (`stand`, frames 0–0) so movement can be added later without restructuring.
 
 **`static preload(scene)`**
 Loads every sprite this character uses. Called from `GameScene.preload()`.
@@ -146,10 +146,10 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
 - **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), and the parallax layer images (`Background.preloadTextures`).
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches the seagull into `Walking` state on contact), then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
-- **`update`** — runs every frame. Handles Space — which switches the seagull from `Walking` back to `Flying` (if needed) and applies a flap — and left/right cursor movement via `moveLeft` / `moveRight` / `stopHorizontal`. Calls `player.clampToBounds()` then `background.update(camera.scrollX)` to drive parallax each frame.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a plain collider between the seagull and surface (no callback — state is derived in `update`), then sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds.
+- **`update`** — runs every frame. Computes `onGround` (from `body.touching.down`/`blocked.down`) and key state, then sets the desired character state in priority order: Space-just-pressed → `Flying` + flap; airborne → `Flying`; on-ground with left/right held → `Walking`; on-ground with no movement keys → `Standing`. Then applies horizontal movement, calls `player.clampToBounds()`, and drives parallax via `background.update(camera.scrollX)`.
 
-State transitions: landing on the `Surface` triggers `Walking` (via the collider callback); pressing Space triggers `Flying` (plus a flap). No more toggle key.
+State transitions are reactive: state is derived each frame from physics contact and key state rather than triggered by events. The `Standing` state requires the seagull to be on-ground *and* no movement keys held — pressing left, right, or space takes it out of `Standing`.
 
 ---
 

@@ -30,6 +30,14 @@ export class Seagull extends Character {
     new Animation('walk', 0, 3, 8, -1),
   );
 
+  private static readonly STANDING = new Sprite(
+    'seagull-standing',
+    'assets/seagull/seagull-standing.png',
+    179,
+    162,
+    new Animation('stand', 0, 0, 1, -1),
+  );
+
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, Seagull.FLYING, CharacterState.Flying, SEAGULL_PHYSICS);
   }
@@ -40,22 +48,25 @@ export class Seagull extends Character {
         return Seagull.FLYING;
       case CharacterState.Walking:
         return Seagull.WALKING;
+      case CharacterState.Standing:
+        return Seagull.STANDING;
     }
   }
 
   protected get allSprites(): readonly Sprite[] {
-    return [Seagull.FLYING, Seagull.WALKING];
+    return [Seagull.FLYING, Seagull.WALKING, Seagull.STANDING];
   }
 
   static preload(scene: Phaser.Scene): void {
     Seagull.FLYING.load(scene);
     Seagull.WALKING.load(scene);
-  }
+    Seagull.STANDING.load(scene);
+    }
 
   override setCharacterState(state: CharacterState): void {
     super.setCharacterState(state);
     const body = this.body as Phaser.Physics.Arcade.Body;
-    if (state === CharacterState.Walking) {
+    if (state === CharacterState.Walking || state === CharacterState.Standing) {
       body.setGravityY(0);
       body.setVelocityY(0);
     } else {

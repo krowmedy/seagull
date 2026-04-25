@@ -51,7 +51,7 @@ export class GameScene extends Phaser.Scene {
 
   update(): void {
     if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-      if (this.player.getCharacterState() === CharacterState.Walking) {
+      if (this.player.getCharacterState() !== CharacterState.Flying) {
         this.player.setCharacterState(CharacterState.Flying);
       }
       this.player.flap();
@@ -63,6 +63,9 @@ export class GameScene extends Phaser.Scene {
       this.player.moveRight();
     } else {
       this.player.stopHorizontal();
+      if (this.player.getCharacterState() == CharacterState.Walking) {
+        this.player.setCharacterState(CharacterState.Standing);
+      }
     }
 
     this.player.clampToBounds();
