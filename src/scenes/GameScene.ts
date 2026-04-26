@@ -6,6 +6,7 @@ import { Food } from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
+import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
 
 export class GameScene extends Phaser.Scene {
   private player!: Seagull;
@@ -71,25 +72,7 @@ export class GameScene extends Phaser.Scene {
         this.sound.play(food.pickupSoundKey, { volume: food.pickupSoundVolume });
       }
 
-      // Show the points collected as a result of picking up the food.
-      const popup = this.add.text(food.x, food.y, `+${food.points}`, {
-        fontFamily: '"Bangers", "Comic Sans MS", cursive',
-        color: '#FFD23F',
-        stroke: '#1A1A2E',
-        strokeThickness: 3,
-        fontSize: 24,
-        padding: { x: 4, y: 4 },
-        resolution: 4,
-      }).setOrigin(0.5);
-      // Fade out the text slowly before destroying it.
-      this.tweens.add({
-        targets: popup,
-        y: food.y - 40,
-        alpha: 0,
-        duration: 600,
-        ease: 'Quad.easeOut',
-        onComplete: () => popup.destroy(),
-      });
+      spawnScorePopup(this, food.x, food.y, food.points);
 
       food.pickup();
     });
@@ -101,18 +84,12 @@ export class GameScene extends Phaser.Scene {
 
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.cursors = this.input.keyboard!.createCursorKeys();
-    const textConfig = {
-      fontFamily: '"Bangers", "Comic Sans MS", cursive',
-      color: "#FFD23F",
-      stroke: "#1A1A2E",
+    this.scoreText = this.add.text(20, 20, `SCORE : ${this.player.points}`, {
+      ...BASE_HUD_TEXT_STYLE,
       strokeThickness: 4,
       // Without padding the stroke is clipped by the text's render-target bounds
       // on glyphs whose outline extends past the font's metric box (e.g. "0").
       padding: { x: 6, y: 6 },
-      resolution: 4,
-    };
-    this.scoreText = this.add.text(20, 20, `SCORE : ${this.player.points}`, {
-      ...textConfig,
       fontSize: 32,
     });
 

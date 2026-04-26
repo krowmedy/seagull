@@ -155,7 +155,18 @@ Creates the sprite at `(x, y)` with `kind.textureKey`, applies `kind.scale` if s
 **`pickup()`**
 Called by `GameScene` when the seagull overlaps this food. Disables the static body so the overlap callback won't fire again during the animation, kills the bob tween, then runs a 180ms scale-up (×1.6) + fade-to-zero tween that destroys the sprite on completion.
 
-When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` if set, spawns a `+N` floating score-popup text at the food's position (tweened up 40px and faded out over 600ms), then calls `food.pickup()` to play the absorb animation.
+When the seagull overlaps a `Food`, `GameScene` adds the points to `seagull.points`, plays `pickupSoundKey` if set, calls `spawnScorePopup` (from `src/ui/Hud.ts`) to show a `+N` floating text at the food's position, then calls `food.pickup()` to play the absorb animation.
+
+---
+
+## `src/ui/Hud.ts`
+
+Home for shared on-screen text styling and HUD helpers. Exports:
+
+- `BASE_HUD_TEXT_STYLE` — the font/colour/stroke/resolution shared between the persistent score text and the floating `+N` popup. Per-text overrides (`strokeThickness`, `padding`, `fontSize`) are spread on top at the call site.
+- `spawnScorePopup(scene, x, y, points)` — adds a `+${points}` text at `(x, y)` and tweens it up 40px while fading to transparent over 600ms (`Quad.easeOut`), destroying the text on completion.
+
+Centralising the base style here stops the score HUD and popup from drifting apart visually as either is tweaked.
 
 ## `src/objects/Surface.ts`
 
