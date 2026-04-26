@@ -52,6 +52,7 @@ export interface LevelConfig {
   layers: ParallaxLayer[];
   foods: FoodPlacement[];
   dogs: EnemyPlacement[];
+  cats: EnemyPlacement[];
   backgroundMusic?: SoundAsset;
 }
 
@@ -83,6 +84,10 @@ export const level1Config: LevelConfig = {
   dogs: [
     { x: 1200, y: 440 },
     { x: 2600, y: 440 },
+  ],
+  cats: [
+    { x: 3300, y: 440 },
+    { x: 3800, y: 440 },
   ],
   backgroundMusic: {
     key: 'level1-music',

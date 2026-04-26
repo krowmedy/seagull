@@ -28,6 +28,7 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, `Enem
 | `layers` | Ordered array of `ParallaxLayer` definitions (furthest to nearest) |
 | `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
 | `dogs` | Array of `EnemyPlacement` ({ x, y }) defining where dog enemies spawn |
+| `cats` | Array of `EnemyPlacement` ({ x, y }) defining where cat enemies spawn |
 | `backgroundMusic` | Optional `SoundAsset` for the level's looping soundtrack |
 
 `SoundAsset` is `{ key, path, volume? }` — `volume` is optional (Phaser defaults to 1.0 when omitted) and applied at playback time, so any sound configured through this interface can be tuned without code changes.
@@ -145,6 +146,14 @@ Reapplies the leftward velocity each frame so collisions with the surface or ter
 
 ---
 
+## `src/objects/Cat.ts`
+
+A `Cat` is the second enemy character. Same shape as `Dog` — extends `Phaser.Physics.Arcade.Sprite` directly, walks left at a constant speed, has gravity, and dies when stomped from above. Module-level constants mirror the dog (`CAT_SCALE` 0.4, `CAT_GRAVITY` 600, `CAT_MAX_FALL_SPEED` 500, `CAT_WALK_SPEED` 80). The walking sprite is loaded from `assets/enemies/cat-walking.png` — 8 frames at 136×121 each, played at 10fps on a loop.
+
+API matches `Dog` exactly: `static preload(scene)`, `constructor(scene, x, y)`, `registerAnimations()`, `die()`, and an empty `update()`. `GameScene` treats dogs and cats uniformly through a single `enemies: Array<Dog | Cat>` field, so they share the stomp/game-over collision logic.
+
+---
+
 ## `src/objects/Food.ts`
 
 The `Food` class is a pickup the seagull collects. Extends `Phaser.Physics.Arcade.Sprite` with a static Arcade body. The displayed texture, scale, and point value all come from the `FoodKind` passed in.
@@ -204,8 +213,8 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Dog` per entry in `level1Config.dogs` and registers a seagull-vs-dog overlap that branches on impact direction (a stomp from above — descending velocity and the seagull's bottom at/above the dog's centre — awards `DOG_STOMP_POINTS` (50), spawns a `+N` popup, bounces the seagull via `flap()`, and calls `dog.die()`; any other contact triggers the game-over flow via `triggerGameOver()`), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
+- **`preload`** — loads seagull assets (`Seagull.preload`), dog and cat enemy spritesheets (`Dog.preload`, `Cat.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns enemies via `spawnEnemies()` — one `Dog` per entry in `level1Config.dogs` and one `Cat` per entry in `level1Config.cats`, all stored in a single `enemies: Array<Dog | Cat>` field — and registers a seagull-vs-enemy overlap that branches on impact direction (a stomp from above — descending velocity and the seagull's bottom at/above the enemy's centre — awards `ENEMY_STOMP_POINTS` (50), spawns a `+N` popup, bounces the seagull via `flap()`, and calls `enemy.die()`; any other contact triggers the game-over flow via `triggerGameOver()`), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
 
 The scene also tracks a `gameOver` flag, set by `triggerGameOver()`. While the flag is set, `update()` short-circuits so player input and dog ticks are ignored. Because `scene.restart()` reuses the same scene instance (class-field initializers do not re-run), `create()` explicitly resets `gameOver = false` and calls `physics.resume()` at the top — without this, the flag and the paused physics from the previous run would carry over and immediately freeze the new game.
 

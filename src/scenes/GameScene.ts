@@ -4,17 +4,18 @@ import { Background } from '../objects/Background.ts';
 import { Surface } from '../objects/Surface.ts';
 import { Food } from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
+import { Cat } from '../objects/Cat.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
 
-const DOG_STOMP_POINTS = 50;
+const ENEMY_STOMP_POINTS = 50;
 
 export class GameScene extends Phaser.Scene {
   private player!: Seagull;
   private background!: Background;
   private surface!: Surface;
-  private dogs: Dog[] = [];
+  private enemies: Array<Dog | Cat> = [];
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
@@ -26,6 +27,7 @@ export class GameScene extends Phaser.Scene {
   preload(): void {
     Seagull.preload(this);
     Dog.preload(this);
+    Cat.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
     for (const placement of level1Config.foods) {
@@ -44,7 +46,7 @@ export class GameScene extends Phaser.Scene {
 
     this.setupWorld();
     this.spawnPlayer();
-    this.spawnDogs();
+    this.spawnEnemies();
     this.spawnFoods();
     this.setupCamera();
     this.setupInput();
@@ -72,30 +74,37 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private spawnDogs(): void {
-    this.dogs = level1Config.dogs.map(d => {
+  private spawnEnemies(): void {
+    const dogs = level1Config.dogs.map(d => {
       const dog = new Dog(this, d.x, d.y);
       dog.registerAnimations();
       return dog;
     });
-    this.physics.add.collider(this.dogs, this.surface);
-    this.physics.add.overlap(this.player, this.dogs, (_player, dogObj) => {
-      const dog = dogObj as Dog;
-      const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-      const dogBody = dog.body as Phaser.Physics.Arcade.Body;
+    const cats = level1Config.cats.map(c => {
+      const cat = new Cat(this, c.x, c.y);
+      cat.registerAnimations();
+      return cat;
+    });
+    this.enemies = [...dogs, ...cats];
 
-      if (!dogBody.enable) return;
+    this.physics.add.collider(this.enemies, this.surface);
+    this.physics.add.overlap(this.player, this.enemies, (_player, enemyObj) => {
+      const enemy = enemyObj as Dog | Cat;
+      const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+      const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
+
+      if (!enemyBody.enable) return;
 
       const isStomp =
-        playerBody.velocity.y > 0 && playerBody.bottom <= dogBody.center.y;
+        playerBody.velocity.y > 0 && playerBody.bottom <= enemyBody.center.y;
 
       if (isStomp) {
-        this.player.points += DOG_STOMP_POINTS;
+        this.player.points += ENEMY_STOMP_POINTS;
         this.scoreText.setText(`SCORE : ${this.player.points}`);
-        spawnScorePopup(this, dog.x, dog.y, DOG_STOMP_POINTS);
+        spawnScorePopup(this, enemy.x, enemy.y, ENEMY_STOMP_POINTS);
         this.player.flap();
-        this.dogs = this.dogs.filter(d => d !== dog);
-        dog.die();
+        this.enemies = this.enemies.filter(e => e !== enemy);
+        enemy.die();
       } else {
         this.triggerGameOver();
       }
@@ -232,8 +241,8 @@ export class GameScene extends Phaser.Scene {
       this.player.setCharacterState(CharacterState.Standing);
     }
 
-    for (const dog of this.dogs) {
-      dog.update();
+    for (const enemy of this.enemies) {
+      enemy.update();
     }
 
     this.player.clampToBounds();
