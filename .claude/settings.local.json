@@ -9,7 +9,8 @@
       "Bash(mkdir -p /c/Users/rohit/workspace/seagull/public/assets)",
       "Bash(cp /c/Users/rohit/workspace/seagull/seagull-sprite.png /c/Users/rohit/workspace/seagull/public/assets/seagull.png)",
       "Bash(/c/nvm4w/nodejs/npm.cmd run *)",
-      "Bash(gh issue *)"
+      "Bash(gh issue *)",
+      "WebFetch(domain:docs.phaser.io)"
     ]
   }
 }

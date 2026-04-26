@@ -124,7 +124,7 @@ Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` 
 
 ## `src/objects/Dog.ts`
 
-A `Dog` is the first enemy character. It extends `Phaser.Physics.Arcade.Sprite` directly (not `Character` — the dog only has one state, so the `CharacterState` machinery would be overkill). The dog walks left at a constant speed, has gravity so it rests on the surface, and triggers a scene restart when the seagull overlaps it.
+A `Dog` is the first enemy character. It extends `Phaser.Physics.Arcade.Sprite` directly (not `Character` — the dog only has one state, so the `CharacterState` machinery would be overkill). The dog walks left at a constant speed, has gravity so it rests on the surface, and is dangerous to the seagull on contact: a head-on or below collision restarts the scene, but if the seagull lands on it from above (a "stomp") the dog dies via `die()`.
 
 Module-level constants: `DOG_SCALE` (0.4), `DOG_GRAVITY` (600), `DOG_MAX_FALL_SPEED` (500), `DOG_WALK_SPEED` (80). The walking sprite is loaded from `assets/enemies/dog-walking.png` — 8 frames at 168×180 each, played at 10fps on a loop.
 
@@ -136,6 +136,9 @@ Creates the sprite, registers it with the scene and physics world, applies scale
 
 **`registerAnimations()`**
 Registers the walk animation with the scene and starts playing it. Called once after construction (must happen after the scene is fully wired).
+
+**`die()`**
+Called by `GameScene` when the seagull stomps the dog from above. Disables the arcade body so the overlap callback won't fire again, stops the walk animation, kills any active tweens, and runs a 180ms scale-up (×1.6) + fade-to-zero tween that destroys the sprite on completion. Mirrors `Food.pickup()`.
 
 **`update()`**
 Reapplies the leftward velocity each frame so collisions with the surface or terrain don't bring the dog to a halt. Called from `GameScene.update()`.
@@ -202,7 +205,7 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
 - **`preload`** — loads seagull assets (`Seagull.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull`, registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns one `Dog` per entry in `level1Config.dogs` and registers a seagull-vs-dog overlap that branches on impact direction (a stomp from above — descending velocity and the seagull's bottom at/above the dog's centre — awards `DOG_STOMP_POINTS` (50), spawns a `+N` popup, bounces the seagull via `flap()`, and calls `dog.die()`; any other contact stops audio and restarts the scene), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
 - **`update`** — runs every frame. Space-just-pressed → `Flying` + flap. Then applies horizontal movement based on left/right keys. After movement, swaps between `Standing` and `Walking` symmetrically: `Standing` + a movement key held → `Walking`; `Walking` + no movement key → `Standing`. Finally calls `player.clampToBounds()` and drives parallax via `background.update(camera.scrollX)`.
 
 The symmetric `Standing ↔ Walking` swap is needed because the surface collider only fires when the bodies are actively overlapping. Once the seagull is at rest on the surface (gravity zeroed in Walking/Standing), the collider stops firing — so we cannot rely on it to push the bird back into `Walking` once it has settled into `Standing`.

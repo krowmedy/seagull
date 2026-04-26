@@ -45,6 +45,25 @@ export class Dog extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  die(): void {
+    const scene = this.scene;
+    const baseScale = this.scaleX || 1;
+
+    this.arcadeBody.enable = false;
+    this.stop();
+
+    scene.tweens.killTweensOf(this);
+    scene.tweens.add({
+      targets: this,
+      scaleX: baseScale * 1.6,
+      scaleY: baseScale * 1.6,
+      alpha: 0,
+      duration: 180,
+      ease: 'Quad.easeOut',
+      onComplete: () => this.destroy(),
+    });
+  }
+
   update(): void {
   }
 }

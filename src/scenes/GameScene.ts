@@ -8,6 +8,8 @@ import { level1Config } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
 
+const DOG_STOMP_POINTS = 50;
+
 export class GameScene extends Phaser.Scene {
   private player!: Seagull;
   private background!: Background;
@@ -71,9 +73,27 @@ export class GameScene extends Phaser.Scene {
       return dog;
     });
     this.physics.add.collider(this.dogs, this.surface);
-    this.physics.add.overlap(this.player, this.dogs, () => {
-      this.sound.stopAll();
-      this.scene.restart();
+    this.physics.add.overlap(this.player, this.dogs, (_player, dogObj) => {
+      const dog = dogObj as Dog;
+      const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+      const dogBody = dog.body as Phaser.Physics.Arcade.Body;
+
+      if (!dogBody.enable) return;
+
+      const isStomp =
+        playerBody.velocity.y > 0 && playerBody.bottom <= dogBody.center.y;
+
+      if (isStomp) {
+        this.player.points += DOG_STOMP_POINTS;
+        this.scoreText.setText(`SCORE : ${this.player.points}`);
+        spawnScorePopup(this, dog.x, dog.y, DOG_STOMP_POINTS);
+        this.player.flap();
+        this.dogs = this.dogs.filter(d => d !== dog);
+        dog.die();
+      } else {
+        this.sound.stopAll();
+        this.scene.restart();
+      }
     });
   }
 
