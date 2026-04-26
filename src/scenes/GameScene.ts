@@ -18,6 +18,7 @@ export class GameScene extends Phaser.Scene {
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
+  private gameOver = false;
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -36,6 +37,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    // scene.restart() reuses the same instance, so class-field initializers
+    // do not re-run — reset persistent state explicitly here.
+    this.gameOver = false;
+    this.physics.resume();
+
     this.setupWorld();
     this.spawnPlayer();
     this.spawnDogs();
@@ -91,9 +97,60 @@ export class GameScene extends Phaser.Scene {
         this.dogs = this.dogs.filter(d => d !== dog);
         dog.die();
       } else {
-        this.sound.stopAll();
-        this.scene.restart();
+        this.triggerGameOver();
       }
+    });
+  }
+
+  private triggerGameOver(): void {
+    if (this.gameOver) return;
+    this.gameOver = true;
+
+    this.sound.stopAll();
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    playerBody.setVelocity(0, 0);
+    playerBody.enable = false;
+    this.player.stop();
+    this.physics.pause();
+
+    this.tweens.add({
+      targets: this.player,
+      angle: 360,
+      alpha: 0.3,
+      duration: 700,
+      ease: 'Quad.easeOut',
+      onComplete: () => this.showGameOverScreen(),
+    });
+  }
+
+  private showGameOverScreen(): void {
+    const cam = this.cameras.main;
+    const cx = cam.width / 2;
+    const cy = cam.height / 2;
+
+    this.add
+      .text(cx, cy - 20, 'GAME OVER', {
+        ...BASE_HUD_TEXT_STYLE,
+        fontSize: 64,
+        strokeThickness: 6,
+        padding: { x: 8, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    this.add
+      .text(cx, cy + 40, 'Press any key to restart', {
+        ...BASE_HUD_TEXT_STYLE,
+        fontSize: 24,
+        strokeThickness: 3,
+        padding: { x: 6, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+
+    this.input.keyboard!.once('keydown', () => {
+      this.scene.restart();
     });
   }
 
@@ -150,6 +207,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(): void {
+    if (this.gameOver) return;
+
     if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
       if (this.player.getCharacterState() !== CharacterState.Flying) {
         this.player.setCharacterState(CharacterState.Flying);
