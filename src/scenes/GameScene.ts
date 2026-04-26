@@ -34,13 +34,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { worldWidth, worldHeight } = level1Config;
+    this.setupWorld();
+    this.spawnPlayer();
+    this.spawnDogs();
+    this.spawnFoods();
+    this.setupCamera();
+    this.setupInput();
+    this.setupHud();
+    this.startMusic();
+  }
 
+  private setupWorld(): void {
+    const { worldWidth, worldHeight } = level1Config;
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.background = new Background(this, level1Config);
-
     this.surface = new Surface(this, worldWidth, worldHeight, level1Config.surface);
+  }
 
+  private spawnPlayer(): void {
+    const { worldWidth, worldHeight } = level1Config;
     const playerStartPosition = { x: worldWidth * 0.04, y: worldHeight / 2 };
     this.player = new Seagull(this, playerStartPosition.x, playerStartPosition.y);
     this.player.createAnimations();
@@ -50,7 +62,9 @@ export class GameScene extends Phaser.Scene {
         this.player.setCharacterState(CharacterState.Walking);
       }
     });
+  }
 
+  private spawnDogs(): void {
     this.dogs = level1Config.dogs.map(d => {
       const dog = new Dog(this, d.x, d.y);
       dog.registerAnimations();
@@ -61,7 +75,9 @@ export class GameScene extends Phaser.Scene {
       this.sound.stopAll();
       this.scene.restart();
     });
+  }
 
+  private spawnFoods(): void {
     const foods = level1Config.foods.map(f => new Food(this, f.x, f.y, f.kind));
     this.physics.add.overlap(this.player, foods, (_player, foodObj) => {
       const food = foodObj as Food;
@@ -76,14 +92,22 @@ export class GameScene extends Phaser.Scene {
 
       food.pickup();
     });
+  }
 
+  private setupCamera(): void {
+    const { worldWidth, worldHeight } = level1Config;
     const cameraLerpX = 0.08;
     const cameraLerpY = 0.08;
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.player, true, cameraLerpX, cameraLerpY);
+  }
 
+  private setupInput(): void {
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.cursors = this.input.keyboard!.createCursorKeys();
+  }
+
+  private setupHud(): void {
     this.scoreText = this.add.text(20, 20, `SCORE : ${this.player.points}`, {
       ...BASE_HUD_TEXT_STYLE,
       strokeThickness: 4,
@@ -92,10 +116,11 @@ export class GameScene extends Phaser.Scene {
       padding: { x: 6, y: 6 },
       fontSize: 32,
     });
-
     // Anchor text to camera's viewport
     this.scoreText.setScrollFactor(0);
+  }
 
+  private startMusic(): void {
     if (level1Config.backgroundMusic) {
       this.sound.play(level1Config.backgroundMusic.key, {
         loop: true,
