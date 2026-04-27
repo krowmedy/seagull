@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { Seagull } from '../objects/Seagull.ts';
 import { Background } from '../objects/Background.ts';
 import { Surface } from '../objects/Surface.ts';
+import { Platform } from '../objects/Platform.ts';
 import { Food } from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
 import { Cat } from '../objects/Cat.ts';
@@ -15,6 +16,7 @@ export class GameScene extends Phaser.Scene {
   private player!: Seagull;
   private background!: Background;
   private surface!: Surface;
+  private platforms: Platform[] = [];
   private enemies: Array<Dog | Cat> = [];
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -46,6 +48,7 @@ export class GameScene extends Phaser.Scene {
 
     this.setupWorld();
     this.spawnPlayer();
+    this.spawnPlatforms();
     this.spawnEnemies();
     this.spawnFoods();
     this.setupCamera();
@@ -66,12 +69,39 @@ export class GameScene extends Phaser.Scene {
     const playerStartPosition = { x: worldWidth * 0.04, y: worldHeight / 2 };
     this.player = new Seagull(this, playerStartPosition.x, playerStartPosition.y);
     this.player.createAnimations();
+    // Render the seagull above gameplay objects (surface, platforms, enemies, food)
+    // so it stays visible when overlapping them. Background uses negative depth.
+    this.player.setDepth(1);
 
+    // Only land into Walking from Flying — leave the input-driven Walking ↔ Standing
+    // swap in update() alone. Gravity is always on, so this collider fires every frame
+    // while resting on the surface; without this guard it would force Walking each tick.
     this.physics.add.collider(this.player, this.surface, () => {
-      if (this.player.getCharacterState() !== CharacterState.Walking) {
+      if (this.player.getCharacterState() === CharacterState.Flying) {
         this.player.setCharacterState(CharacterState.Walking);
       }
     });
+  }
+
+  private spawnPlatforms(): void {
+    this.platforms = level1Config.platforms.map(p => new Platform(this, p));
+    this.physics.add.collider(
+      this.player,
+      this.platforms,
+      () => {
+        if (this.player.getCharacterState() === CharacterState.Flying) {
+          this.player.setCharacterState(CharacterState.Walking);
+        }
+      },
+      // One-way gate: Phaser fires the collide callback on every overlap regardless
+      // of whether the static body's checkCollision flags allow separation. Without
+      // this gate, the callback would flip state Flying → Walking each time the
+      // seagull rises through a platform from below, giving a phantom flap.
+      player => {
+        const body = (player as Phaser.Physics.Arcade.Sprite).body as Phaser.Physics.Arcade.Body;
+        return body.velocity.y >= 0;
+      },
+    );
   }
 
   private spawnEnemies(): void {
@@ -232,6 +262,18 @@ export class GameScene extends Phaser.Scene {
       this.player.moveRight();
     } else {
       this.player.stopHorizontal();
+    }
+
+    // Walked off a platform / surface edge: nothing is supporting the body, so flip
+    // back to Flying and let gravity take over.
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    const grounded = playerBody.touching.down || playerBody.blocked.down;
+    const groundedState = this.player.getCharacterState();
+    if (
+      !grounded &&
+      (groundedState === CharacterState.Walking || groundedState === CharacterState.Standing)
+    ) {
+      this.player.setCharacterState(CharacterState.Flying);
     }
 
     const state = this.player.getCharacterState();

@@ -46,7 +46,13 @@ export class Seagull extends Character {
   }
 
   private applySmallerHitbox() {
-    this.arcadeBody.setSize(Seagull.STANDING.frameHeight, Seagull.STANDING.frameWidth);
+    const body = this.arcadeBody;
+    const prevBottom = body.bottom;
+    body.setSize(Seagull.STANDING.frameHeight, Seagull.STANDING.frameWidth);
+    // Phaser's setSize re-centres the body on the sprite, which would otherwise
+    // shift body.bottom up by ~11px per Walking → Flying round-trip and read as
+    // a tiny phantom flap. Preserve the bottom edge across the resize.
+    this.y += prevBottom - body.bottom;
   }
 
   protected spriteFor(state: CharacterState): Sprite {
@@ -72,16 +78,10 @@ export class Seagull extends Character {
 
   override setCharacterState(state: CharacterState): void {
     super.setCharacterState(state);
-    const body = this.arcadeBody;
-    if (state === CharacterState.Walking || state === CharacterState.Standing) {
-      body.setGravityY(0);
-      body.setVelocityY(0);
-    } else {
-      // Make the hitbox smaller for the flying animation because the sprite is much
-      // bigger than the walking and standing animations. The larger sprite box
-      // would result in more unnatural collisions with enemies.
-      this.applySmallerHitbox()
-      body.setGravityY(SEAGULL_PHYSICS.gravity);
+    if (state === CharacterState.Flying) {
+      // Flying sprite has fully extended wings; shrink the hitbox to the
+      // walking/standing silhouette to avoid spurious enemy collisions.
+      this.applySmallerHitbox();
     }
   }
 

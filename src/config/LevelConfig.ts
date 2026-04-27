@@ -37,6 +37,14 @@ export interface EnemyPlacement {
   y: number;
 }
 
+export interface PlatformConfig {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  textureKey?: string;
+}
+
 const BREAD: FoodKind = {
   textureKey: 'food-bread-loaf',
   imagePath: 'assets/food/bread-loaf.png',
@@ -53,6 +61,7 @@ export interface LevelConfig {
   foods: FoodPlacement[];
   dogs: EnemyPlacement[];
   cats: EnemyPlacement[];
+  platforms: PlatformConfig[];
   backgroundMusic?: SoundAsset;
 }
 
@@ -88,6 +97,10 @@ export const level1Config: LevelConfig = {
   cats: [
     { x: 3300, y: 440 },
     { x: 3800, y: 440 },
+  ],
+  platforms: [
+    { x: 800, y: 300, width: 180, height: 24 },
+    { x: 1700, y: 420, width: 220, height: 60 },
   ],
   backgroundMusic: {
     key: 'level1-music',
