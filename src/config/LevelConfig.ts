@@ -42,7 +42,8 @@ export interface PlatformConfig {
   y: number;
   width: number;
   height: number;
-  textureKey?: string;
+  textureKey: string;
+  imagePath: string;
 }
 
 const BREAD: FoodKind = {
@@ -99,8 +100,14 @@ export const level1Config: LevelConfig = {
     { x: 3800, y: 440 },
   ],
   platforms: [
-    { x: 800, y: 300, width: 180, height: 24 },
-    { x: 1700, y: 420, width: 220, height: 60 },
+    {
+      x: 90,
+      y: 227,
+      width: 122,
+      height: 253,
+      textureKey: 'platform-graffiti',
+      imagePath: 'assets/platform/graffiti_structure.png',
+    },
   ],
   backgroundMusic: {
     key: 'level1-music',

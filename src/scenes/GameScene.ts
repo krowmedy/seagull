@@ -32,6 +32,9 @@ export class GameScene extends Phaser.Scene {
     Cat.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
+    for (const platform of level1Config.platforms) {
+      Platform.preload(this, platform);
+    }
     for (const placement of level1Config.foods) {
       Food.preload(this, placement.kind);
     }
@@ -65,8 +68,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnPlayer(): void {
-    const { worldWidth, worldHeight } = level1Config;
-    const playerStartPosition = { x: worldWidth * 0.04, y: worldHeight / 2 };
+    const { worldWidth } = level1Config;
+    const playerStartPosition = { x: worldWidth * 0.04, y: 80 };
     this.player = new Seagull(this, playerStartPosition.x, playerStartPosition.y);
     this.player.createAnimations();
     // Render the seagull above gameplay objects (surface, platforms, enemies, food)

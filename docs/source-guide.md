@@ -29,7 +29,7 @@ Defines the `ParallaxLayer`, `SurfaceConfig`, `FoodKind`, `FoodPlacement`, `Enem
 | `foods` | Array of `FoodPlacement` ({ kind, x, y }) defining food pickups in the level |
 | `dogs` | Array of `EnemyPlacement` ({ x, y }) defining where dog enemies spawn |
 | `cats` | Array of `EnemyPlacement` ({ x, y }) defining where cat enemies spawn |
-| `platforms` | Array of `PlatformConfig` ({ x, y, width, height, textureKey? }) defining static platforms above the surface |
+| `platforms` | Array of `PlatformConfig` ({ x, y, width, height, textureKey, imagePath }) defining static platforms above the surface |
 | `backgroundMusic` | Optional `SoundAsset` for the level's looping soundtrack |
 
 `SoundAsset` is `{ key, path, volume? }` — `volume` is optional (Phaser defaults to 1.0 when omitted) and applied at playback time, so any sound configured through this interface can be tuned without code changes.
@@ -197,12 +197,13 @@ Collision behaviour (what happens when the seagull lands on it) is wired up in `
 
 ## `src/objects/Platform.ts`
 
-A `Platform` is a static rectangular structure above the surface that the seagull can land on top of. Extends `Phaser.GameObjects.Rectangle` with a static Arcade body. Configured one-way: only the top face blocks (`checkCollision.up = true`); `down`, `left`, and `right` are disabled so the seagull can flap upward through a platform from below or pass through its sides without snagging.
+A `Platform` is a static structure above the surface that the seagull can land on top of. Extends `Phaser.GameObjects.Image` with a static Arcade body — the texture comes from `PlatformConfig.textureKey` (loaded from `imagePath`), and the rendered size is forced to `config.width × config.height` via `setDisplaySize`. Configured one-way: only the top face blocks (`checkCollision.up = true`); `down`, `left`, and `right` are disabled so the seagull can flap upward through a platform from below or pass through its sides without snagging.
 
-The placeholder fill colour is `0x888888`. The `PlatformConfig.textureKey` field is reserved for future sprite art — when set, the constructor would render with a sprite instead of a flat rectangle (TODO).
+**`static preload(scene, config)`**
+Loads the platform's image into the Phaser cache under `config.textureKey`. Called from `GameScene.preload()` once per platform in the level config. Mirrors `Surface.preload`.
 
 **`constructor(scene, config)`**
-Treats `config.x` / `config.y` as the platform's top-left corner (more natural for level design than Phaser's centre-origin default), converts them to a centre point internally, registers with the scene and physics world as a static body, then disables the three non-top collision faces.
+Treats `config.x` / `config.y` as the platform's top-left corner (more natural for level design than Phaser's centre-origin default), converts them to a centre point internally, sets the display size from `config.width / config.height`, then registers with the scene and physics world as a static body. Because a `StaticBody` is sized from the source texture at creation time and does not track later display-size changes, the body is explicitly resized via `setSize` + `updateFromGameObject` so the hitbox matches the rendered sprite. Finally disables the three non-top collision faces.
 
 Wiring up player landing behaviour (state transition to `Walking`) is `GameScene`'s job — the platform itself just exposes a static body for colliders to use, mirroring `Surface`.
 
@@ -227,7 +228,7 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
-- **`preload`** — loads seagull assets (`Seagull.preload`), dog and cat enemy spritesheets (`Dog.preload`, `Cat.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
+- **`preload`** — loads seagull assets (`Seagull.preload`), dog and cat enemy spritesheets (`Dog.preload`, `Cat.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per platform in `level1Config.platforms` (`Platform.preload`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
 - **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull` (the seagull is set to `depth 1` so it renders above the surface, platforms, enemies, and food, all of which stay at the default depth 0; the background uses negative depths and stays behind), registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns platforms via `spawnPlatforms()` — one `Platform` per entry in `level1Config.platforms`, registered as a single collider against the player whose callback also transitions the seagull to `Walking` (so landing on a platform behaves identically to landing on the ground), spawns enemies via `spawnEnemies()` — one `Dog` per entry in `level1Config.dogs` and one `Cat` per entry in `level1Config.cats`, all stored in a single `enemies: Array<Dog | Cat>` field — and registers a seagull-vs-enemy overlap that branches on impact direction (a stomp from above — descending velocity and the seagull's bottom at/above the enemy's centre — awards `ENEMY_STOMP_POINTS` (50), spawns a `+N` popup, bounces the seagull via `flap()`, and calls `enemy.die()`; any other contact triggers the game-over flow via `triggerGameOver()`), spawns one `Food` per entry in `level1Config.foods` and registers an overlap that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, and destroys the food, sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
 
 The scene also tracks a `gameOver` flag, set by `triggerGameOver()`. While the flag is set, `update()` short-circuits so player input and dog ticks are ignored. Because `scene.restart()` reuses the same scene instance (class-field initializers do not re-run), `create()` explicitly resets `gameOver = false` and calls `physics.resume()` at the top — without this, the flag and the paused physics from the previous run would carry over and immediately freeze the new game.
