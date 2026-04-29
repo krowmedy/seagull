@@ -1,13 +1,16 @@
 import * as Phaser from 'phaser';
 import { Sprite } from './Sprite.ts';
 import { Animation } from './Animation.ts';
+import { BREAD } from '../config/LevelConfig.ts';
+import type { StompOutcome } from './Enemy.ts';
 
 const MAN_SCALE = 0.7;
 const MAN_GRAVITY = 600;
 const MAN_MAX_FALL_SPEED = 500;
 const MAN_WALK_SPEED = 80;
-const MAN_HITS_TO_KILL = 2;
+const MAN_HITS_TO_KILL = 3;
 const MAN_HIT_FLASH_MS = 150;
+const MAN_STOMP_POINTS = 100;
 
 export class Man extends Phaser.Physics.Arcade.Sprite {
   private static readonly WALKING = new Sprite(
@@ -49,15 +52,13 @@ export class Man extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  // Returns true when this hit is fatal (caller should call die()).
-  // Returns false on a non-fatal hit, after triggering the visual hit feedback.
-  takeHit(): boolean {
+  stomp(): StompOutcome {
     this.hitsTaken += 1;
-    if (this.hitsTaken >= MAN_HITS_TO_KILL) {
-      return true;
+    if (this.hitsTaken < MAN_HITS_TO_KILL) {
+      this.playHitEffect();
+      return { killed: false, points: 0 };
     }
-    this.playHitEffect();
-    return false;
+    return { killed: true, points: MAN_STOMP_POINTS, drop: BREAD };
   }
 
   private playHitEffect(): void {

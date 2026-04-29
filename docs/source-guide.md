@@ -125,11 +125,26 @@ Horizontal movement helpers that encapsulate `HORIZONTAL_SPEED` — `GameScene` 
 
 ---
 
+## `src/objects/Enemy.ts`
+
+Types-only module exporting the `StompOutcome` interface — the contract every enemy returns from its `stomp()` method. Three orthogonal fields:
+
+- `killed: boolean` — when `true`, `GameScene` removes the enemy from its tracked list and calls `enemy.die()`.
+- `points: number` — points awarded for this stomp; `0` means no scoring or popup.
+- `drop?: FoodKind` — when set, `GameScene` spawns a `Food` of that kind at the enemy's position and registers a single-target overlap for it.
+
+Each enemy class (`Dog`, `Cat`, `Man`) implements `stomp()` and returns one of these. `GameScene` is then a single generic flow over the outcome — no `instanceof` branches — so adding a new enemy variant is purely a matter of giving it its own `stomp()` implementation.
+
+---
+
 ## `src/objects/Dog.ts`
 
 A `Dog` is the first enemy character. It extends `Phaser.Physics.Arcade.Sprite` directly (not `Character` — the dog only has one state, so the `CharacterState` machinery would be overkill). The dog walks left at a constant speed, has gravity so it rests on the surface, and is dangerous to the seagull on contact: a head-on or below collision restarts the scene, but if the seagull lands on it from above (a "stomp") the dog dies via `die()`.
 
-Module-level constants: `DOG_SCALE` (0.4), `DOG_GRAVITY` (600), `DOG_MAX_FALL_SPEED` (500), `DOG_WALK_SPEED` (80). The walking sprite is loaded from `assets/enemies/dog-walking.png` — 8 frames at 168×180 each, played at 10fps on a loop.
+Module-level constants: `DOG_SCALE` (0.4), `DOG_GRAVITY` (600), `DOG_MAX_FALL_SPEED` (500), `DOG_WALK_SPEED` (80), `DOG_STOMP_POINTS` (50). The walking sprite is loaded from `assets/enemies/dog-walking.png` — 8 frames at 168×180 each, played at 10fps on a loop.
+
+**`stomp()`**
+Returns `{ killed: true, points: DOG_STOMP_POINTS }` — the dog always dies in one hit and awards 50 points, no drop.
 
 **`static preload(scene)`**
 Loads the walking spritesheet. Called from `GameScene.preload()`.
@@ -150,17 +165,22 @@ Reapplies the leftward velocity each frame so collisions with the surface or ter
 
 ## `src/objects/Cat.ts`
 
-A `Cat` is the second enemy character. Same shape as `Dog` — extends `Phaser.Physics.Arcade.Sprite` directly, walks left at a constant speed, has gravity, and dies when stomped from above. Module-level constants mirror the dog (`CAT_SCALE` 0.4, `CAT_GRAVITY` 600, `CAT_MAX_FALL_SPEED` 500, `CAT_WALK_SPEED` 80). The walking sprite is loaded from `assets/enemies/cat-walking.png` — 8 frames at 136×121 each, played at 10fps on a loop.
+A `Cat` is the second enemy character. Same shape as `Dog` — extends `Phaser.Physics.Arcade.Sprite` directly, walks left at a constant speed, has gravity, and dies when stomped from above. Module-level constants mirror the dog (`CAT_SCALE` 0.4, `CAT_GRAVITY` 600, `CAT_MAX_FALL_SPEED` 500, `CAT_WALK_SPEED` 80, `CAT_STOMP_POINTS` 50). The walking sprite is loaded from `assets/enemies/cat-walking.png` — 8 frames at 136×121 each, played at 10fps on a loop.
 
-API matches `Dog` exactly: `static preload(scene)`, `constructor(scene, x, y)`, `registerAnimations()`, `die()`, and an empty `update()`. `GameScene` treats dogs, cats, and men uniformly through a single `enemies: Array<Dog | Cat | Man>` field, so they share the stomp/game-over collision logic.
+API matches `Dog` exactly: `static preload(scene)`, `constructor(scene, x, y)`, `registerAnimations()`, `stomp()` returning `{ killed: true, points: CAT_STOMP_POINTS }`, `die()`, and an empty `update()`. `GameScene` treats dogs, cats, and men uniformly through a single `enemies: Array<Dog | Cat | Man>` field, calling `enemy.stomp()` polymorphically rather than branching on the concrete class.
 
 ---
 
 ## `src/objects/Man.ts`
 
-A `Man` is the third enemy character. Same shape as `Dog` and `Cat` — extends `Phaser.Physics.Arcade.Sprite` directly, walks left at a constant speed, has gravity, and dies when stomped from above. Module-level constants mirror the other enemies (`MAN_SCALE` 0.4, `MAN_GRAVITY` 600, `MAN_MAX_FALL_SPEED` 500, `MAN_WALK_SPEED` 80). The walking sprite is loaded from `assets/enemies/man-walking.png` — 4 frames at 139×222 each, played at 10fps on a loop.
+A `Man` is the third enemy character. Same shape as `Dog` and `Cat` — extends `Phaser.Physics.Arcade.Sprite` directly, walks left at a constant speed, has gravity. Module-level constants: `MAN_SCALE` (0.7), `MAN_GRAVITY` (600), `MAN_MAX_FALL_SPEED` (500), `MAN_WALK_SPEED` (80), `MAN_HITS_TO_KILL` (2), `MAN_HIT_FLASH_MS` (150), `MAN_STOMP_POINTS` (50). The walking sprite is loaded from `assets/enemies/man-walking.png` — 4 frames at 139×222 each, played at 10fps on a loop.
 
-API extends `Dog`/`Cat` with a two-hit kill mechanic: `takeHit()` returns `true` only on the second stomp. The first stomp triggers a brief white tint-fill flash (`MAN_HIT_FLASH_MS`, 150ms) via `setTintFill` + `time.delayedCall`, increments the hit counter, and returns `false` so `GameScene` knows to bounce the seagull without killing the man. On the killing blow, `GameScene` then drops a piece of bread at the man's position via `dropFood`. Drop and stomp-bookkeeping logic both live in `GameScene` — the man itself only owns the hit-counter state and the flash effect.
+The Man encapsulates a two-hit kill mechanic and its own drop choice via `stomp()`:
+
+- First stomp: increments `hitsTaken`, calls `playHitEffect()` (a brief red multiplicative tint via `setTint(0xff5555)` cleared after `MAN_HIT_FLASH_MS` by `scene.time.delayedCall`, guarded with `this.active` so a death tween mid-delay can't crash it), and returns `{ killed: false, points: 0 }` — `GameScene` bounces the seagull but skips scoring and removal.
+- Second stomp: returns `{ killed: true, points: MAN_STOMP_POINTS, drop: BREAD }` — `GameScene` awards 50 points, drops a piece of bread at the man's position, and runs the death tween.
+
+Because the Man owns the choice of what he drops, `BREAD` is imported here from `LevelConfig` rather than referenced in `GameScene`. Adding a tougher enemy variant is purely a matter of returning a different `StompOutcome` from its own `stomp()` — no `GameScene` changes required.
 
 ---
 
@@ -238,7 +258,7 @@ Called every frame from `GameScene`. Sets each tile's `tilePositionX = (cameraSc
 The main (and currently only) gameplay scene. Follows the standard Phaser scene lifecycle:
 
 - **`preload`** — loads seagull assets (`Seagull.preload`), dog, cat and man enemy spritesheets (`Dog.preload`, `Cat.preload`, `Man.preload`), the surface texture for this level (`Surface.preload(this, level1Config.surface)`), the parallax layer images (`Background.preloadTextures`), one image per platform in `level1Config.platforms` (`Platform.preload`), one image per food kind referenced in `level1Config.foods` (`Food.preload`), and the level's background music if specified.
-- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull` (the seagull is set to `depth 1` so it renders above the surface, platforms, enemies, and food, all of which stay at the default depth 0; the background uses negative depths and stays behind), registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns platforms via `spawnPlatforms()` — one `Platform` per entry in `level1Config.platforms`, registered as a single collider against the player whose callback also transitions the seagull to `Walking` (so landing on a platform behaves identically to landing on the ground), spawns enemies via `spawnEnemies()` — one `Dog` per entry in `level1Config.dogs`, one `Cat` per entry in `level1Config.cats`, and one `Man` per entry in `level1Config.men`, all stored in a single `enemies: Array<Dog | Cat | Man>` field — and registers a seagull-vs-enemy overlap that branches on impact direction (a stomp from above — descending velocity and the seagull's bottom at/above the enemy's centre — awards `ENEMY_STOMP_POINTS` (50), spawns a `+N` popup, bounces the seagull via `flap()`, and calls `enemy.die()`; if the stomped enemy is a `Man`, the scene first calls `man.takeHit()` and short-circuits with just a `flap()` if it returns `false` (first stomp — the man flashes white and survives), only proceeding to the points/death/drop branch on the second stomp, and a piece of bread is then dropped at his position via `dropFood`, which spawns a `Food` and registers a single-target overlap whose callback delegates to `collectFood`; any other contact triggers the game-over flow via `triggerGameOver()`), spawns one `Food` per entry in `level1Config.foods` and registers an overlap whose callback also delegates to `collectFood` — a private helper that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, spawns a `+N` popup, and runs `food.pickup()` to fade and destroy the sprite — sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
+- **`create`** — expands the physics world to the full level dimensions, instantiates the `Background`, `Surface`, and `Seagull` (the seagull is set to `depth 1` so it renders above the surface, platforms, enemies, and food, all of which stay at the default depth 0; the background uses negative depths and stays behind), registers a collider between the seagull and surface (the callback switches to `Walking` on contact), spawns platforms via `spawnPlatforms()` — one `Platform` per entry in `level1Config.platforms`, registered as a single collider against the player whose callback also transitions the seagull to `Walking` (so landing on a platform behaves identically to landing on the ground), spawns enemies via `spawnEnemies()` — one `Dog` per entry in `level1Config.dogs`, one `Cat` per entry in `level1Config.cats`, and one `Man` per entry in `level1Config.men`, all stored in a single `enemies: Array<Dog | Cat | Man>` field — and registers a seagull-vs-enemy overlap that branches on impact direction (a stomp from above — descending velocity and the seagull's bottom at/above the enemy's centre — calls `enemy.stomp()` to obtain a `StompOutcome` and applies it generically: `flap()` always, `points > 0` adds to the score and spawns a popup, `drop` spawns a `Food` at the enemy's position via `dropFood`, and `killed: true` removes the enemy from `this.enemies` and calls `enemy.die()` — no `instanceof` branches on enemy type; which spawns a `Food` and registers a single-target overlap whose callback delegates to `collectFood`; any other contact triggers the game-over flow via `triggerGameOver()`), spawns one `Food` per entry in `level1Config.foods` and registers an overlap whose callback also delegates to `collectFood` — a private helper that adds the food's points to `player.points`, plays the food's pickup sound at its configured volume, spawns a `+N` popup, and runs `food.pickup()` to fade and destroy the sprite — sets the camera to follow the player with a gentle lerp (`0.08`) within the level bounds, and starts the level's looping background music (if set) using the music's configured `volume`.
 
 The scene also tracks a `gameOver` flag, set by `triggerGameOver()`. While the flag is set, `update()` short-circuits so player input and dog ticks are ignored. Because `scene.restart()` reuses the same scene instance (class-field initializers do not re-run), `create()` explicitly resets `gameOver = false` and calls `physics.resume()` at the top — without this, the flag and the paused physics from the previous run would carry over and immediately freeze the new game.
 

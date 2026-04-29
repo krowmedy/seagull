@@ -1,11 +1,13 @@
 import * as Phaser from 'phaser';
 import { Sprite } from './Sprite.ts';
 import { Animation } from './Animation.ts';
+import type { StompOutcome } from './Enemy.ts';
 
 const DOG_SCALE = 0.4;
 const DOG_GRAVITY = 600;
 const DOG_MAX_FALL_SPEED = 500;
 const DOG_WALK_SPEED = 80;
+const DOG_STOMP_POINTS = 50;
 
 export class Dog extends Phaser.Physics.Arcade.Sprite {
   private static readonly WALKING = new Sprite(
@@ -43,6 +45,10 @@ export class Dog extends Phaser.Physics.Arcade.Sprite {
     if (Dog.WALKING.animation) {
       this.play(Dog.WALKING.animation.key);
     }
+  }
+
+  stomp(): StompOutcome {
+    return { killed: true, points: DOG_STOMP_POINTS };
   }
 
   die(): void {

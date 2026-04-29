@@ -7,12 +7,10 @@ import { Food } from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
 import { Cat } from '../objects/Cat.ts';
 import { Man } from '../objects/Man.ts';
-import { level1Config, BREAD } from '../config/LevelConfig.ts';
+import { level1Config } from '../config/LevelConfig.ts';
 import type { FoodKind } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
-
-const ENEMY_STOMP_POINTS = 50;
 
 export class GameScene extends Phaser.Scene {
   private player!: Seagull;
@@ -140,22 +138,19 @@ export class GameScene extends Phaser.Scene {
         playerBody.velocity.y > 0 && playerBody.bottom <= enemyBody.center.y;
 
       if (isStomp) {
-        // The man takes two stomps. The first hit just flashes him and bounces
-        // the seagull off; only the second hit kills + drops bread.
-        if (enemy instanceof Man && !enemy.takeHit()) {
-          this.player.flap();
-          return;
-        }
-        this.player.points += ENEMY_STOMP_POINTS;
-        this.scoreText.setText(`SCORE : ${this.player.points}`);
-        spawnScorePopup(this, enemy.x, enemy.y, ENEMY_STOMP_POINTS);
+        const outcome = enemy.stomp();
         this.player.flap();
-        this.enemies = this.enemies.filter(e => e !== enemy);
-        const dropX = enemy.x;
-        const dropY = enemy.y;
-        enemy.die();
-        if (enemy instanceof Man) {
-          this.dropFood(dropX, dropY, BREAD);
+        if (outcome.points > 0) {
+          this.player.points += outcome.points;
+          this.scoreText.setText(`SCORE : ${this.player.points}`);
+          spawnScorePopup(this, enemy.x, enemy.y, outcome.points);
+        }
+        if (outcome.drop) {
+          this.dropFood(enemy.x, enemy.y, outcome.drop);
+        }
+        if (outcome.killed) {
+          this.enemies = this.enemies.filter(e => e !== enemy);
+          enemy.die();
         }
       } else {
         this.triggerGameOver();
