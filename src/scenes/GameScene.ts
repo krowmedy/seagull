@@ -6,7 +6,9 @@ import { Platform } from '../objects/Platform.ts';
 import { Food } from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
 import { Cat } from '../objects/Cat.ts';
-import { level1Config } from '../config/LevelConfig.ts';
+import { Man } from '../objects/Man.ts';
+import { level1Config, BREAD } from '../config/LevelConfig.ts';
+import type { FoodKind } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
 
@@ -17,7 +19,7 @@ export class GameScene extends Phaser.Scene {
   private background!: Background;
   private surface!: Surface;
   private platforms: Platform[] = [];
-  private enemies: Array<Dog | Cat> = [];
+  private enemies: Array<Dog | Cat | Man> = [];
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
@@ -30,6 +32,7 @@ export class GameScene extends Phaser.Scene {
     Seagull.preload(this);
     Dog.preload(this);
     Cat.preload(this);
+    Man.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
     for (const platform of level1Config.platforms) {
@@ -118,11 +121,16 @@ export class GameScene extends Phaser.Scene {
       cat.registerAnimations();
       return cat;
     });
-    this.enemies = [...dogs, ...cats];
+    const men = level1Config.men.map(m => {
+      const man = new Man(this, m.x, m.y);
+      man.registerAnimations();
+      return man;
+    });
+    this.enemies = [...dogs, ...cats, ...men];
 
     this.physics.add.collider(this.enemies, this.surface);
     this.physics.add.overlap(this.player, this.enemies, (_player, enemyObj) => {
-      const enemy = enemyObj as Dog | Cat;
+      const enemy = enemyObj as Dog | Cat | Man;
       const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
       const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
 
@@ -132,16 +140,47 @@ export class GameScene extends Phaser.Scene {
         playerBody.velocity.y > 0 && playerBody.bottom <= enemyBody.center.y;
 
       if (isStomp) {
+        // The man takes two stomps. The first hit just flashes him and bounces
+        // the seagull off; only the second hit kills + drops bread.
+        if (enemy instanceof Man && !enemy.takeHit()) {
+          this.player.flap();
+          return;
+        }
         this.player.points += ENEMY_STOMP_POINTS;
         this.scoreText.setText(`SCORE : ${this.player.points}`);
         spawnScorePopup(this, enemy.x, enemy.y, ENEMY_STOMP_POINTS);
         this.player.flap();
         this.enemies = this.enemies.filter(e => e !== enemy);
+        const dropX = enemy.x;
+        const dropY = enemy.y;
         enemy.die();
+        if (enemy instanceof Man) {
+          this.dropFood(dropX, dropY, BREAD);
+        }
       } else {
         this.triggerGameOver();
       }
     });
+  }
+
+  private dropFood(x: number, y: number, kind: FoodKind): void {
+    const food = new Food(this, x, y, kind);
+    this.physics.add.overlap(this.player, food, (_player, foodObj) => {
+      this.collectFood(foodObj as Food);
+    });
+  }
+
+  private collectFood(food: Food): void {
+    this.player.points += food.points;
+    this.scoreText.setText(`SCORE : ${this.player.points}`);
+
+    if (food.pickupSoundKey) {
+      this.sound.play(food.pickupSoundKey, { volume: food.pickupSoundVolume });
+    }
+
+    spawnScorePopup(this, food.x, food.y, food.points);
+
+    food.pickup();
   }
 
   private triggerGameOver(): void {
@@ -199,17 +238,7 @@ export class GameScene extends Phaser.Scene {
   private spawnFoods(): void {
     const foods = level1Config.foods.map(f => new Food(this, f.x, f.y, f.kind));
     this.physics.add.overlap(this.player, foods, (_player, foodObj) => {
-      const food = foodObj as Food;
-      this.player.points += food.points;
-      this.scoreText.setText(`SCORE : ${this.player.points}`);
-
-      if (food.pickupSoundKey) {
-        this.sound.play(food.pickupSoundKey, { volume: food.pickupSoundVolume });
-      }
-
-      spawnScorePopup(this, food.x, food.y, food.points);
-
-      food.pickup();
+      this.collectFood(foodObj as Food);
     });
   }
 
@@ -251,7 +280,10 @@ export class GameScene extends Phaser.Scene {
   update(): void {
     if (this.gameOver) return;
 
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.spaceKey) ||
+      Phaser.Input.Keyboard.JustDown(this.cursors.up)
+    ) {
       if (this.player.getCharacterState() !== CharacterState.Flying) {
         this.player.setCharacterState(CharacterState.Flying);
       }

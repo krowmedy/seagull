@@ -46,7 +46,7 @@ export interface PlatformConfig {
   imagePath: string;
 }
 
-const BREAD: FoodKind = {
+export const BREAD: FoodKind = {
   textureKey: 'food-bread-loaf',
   imagePath: 'assets/food/bread-loaf.png',
   scale: 0.7,
@@ -62,6 +62,7 @@ export interface LevelConfig {
   foods: FoodPlacement[];
   dogs: EnemyPlacement[];
   cats: EnemyPlacement[];
+  men: EnemyPlacement[];
   platforms: PlatformConfig[];
   backgroundMusic?: SoundAsset;
 }
@@ -98,6 +99,10 @@ export const level1Config: LevelConfig = {
   cats: [
     { x: 3300, y: 440 },
     { x: 3800, y: 440 },
+  ],
+  men: [
+    { x: 1900, y: 380 },
+    { x: 3400, y: 380 },
   ],
   platforms: [
     {
