@@ -7,6 +7,7 @@ import { Food } from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
 import { Cat } from '../objects/Cat.ts';
 import { Man } from '../objects/Man.ts';
+import { Stone } from '../objects/Stone.ts';
 import { level1Config } from '../config/LevelConfig.ts';
 import type { FoodKind } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
@@ -31,6 +32,7 @@ export class GameScene extends Phaser.Scene {
     Dog.preload(this);
     Cat.preload(this);
     Man.preload(this);
+    Stone.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
     for (const platform of level1Config.platforms) {
@@ -120,8 +122,9 @@ export class GameScene extends Phaser.Scene {
       return cat;
     });
     const men = level1Config.men.map(m => {
-      const man = new Man(this, m.x, m.y);
+      const man = new Man(this, m.x, m.y, this.player);
       man.registerAnimations();
+      man.onStoneThrow((x, y, targetX) => this.spawnStone(x, y, targetX));
       return man;
     });
     this.enemies = [...dogs, ...cats, ...men];
@@ -156,6 +159,19 @@ export class GameScene extends Phaser.Scene {
         this.triggerGameOver();
       }
     });
+  }
+
+  private spawnStone(x: number, y: number, targetX: number): void {
+    if (this.gameOver) return;
+    const stone = new Stone(this, x, y, targetX);
+    this.physics.add.overlap(this.player, stone, () => {
+      stone.destroy();
+      this.triggerGameOver();
+    });
+    // Stones break on landing — without these the seagull could walk into a
+    // resting stone and trigger game over long after the throw.
+    this.physics.add.collider(stone, this.surface, () => stone.destroy());
+    this.physics.add.collider(stone, this.platforms, () => stone.destroy());
   }
 
   private dropFood(x: number, y: number, kind: FoodKind): void {

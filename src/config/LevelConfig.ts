@@ -101,8 +101,9 @@ export const level1Config: LevelConfig = {
     { x: 3800, y: 440 },
   ],
   men: [
-    { x: 1900, y: 380 },
-    { x: 3400, y: 380 },
+    // Single end-of-level boss, spawned at level start but held in his Dormant
+    // state until the seagull comes within MAN_ACTIVATION_RANGE.
+    { x: 3700, y: 380 },
   ],
   platforms: [
     {
