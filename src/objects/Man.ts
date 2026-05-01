@@ -171,10 +171,7 @@ export class Man extends Phaser.Physics.Arcade.Sprite {
     if (!this.active) return;
     this.manState = ManState.Walking;
     this.play(WALK_ANIM_KEY);
-    // The walking sprite faces left in its raw frames; flipX === true means the
-    // man is now facing right after locking onto the seagull, so walk that way.
-    const direction = this.flipX ? 1 : -1;
-    this.arcadeBody.setVelocityX(direction * MAN_WALK_SPEED);
+    
   }
 
   private faceSeagull(): void {
@@ -224,8 +221,18 @@ export class Man extends Phaser.Physics.Arcade.Sprite {
       }
       return;
     }
-    if (this.manState === ManState.Alert) {
-      this.faceSeagull();
+    this.faceTowardsSeagull();
+  }
+
+  private faceTowardsSeagull() {
+    // The walking sprite faces left in its raw frames; flipX === true means the
+    // man is now facing right after locking onto the seagull, so walk that way.
+    const prevFlipX = this.flipX;
+    const newFlipX = this.seagull.x > this.x;
+    if (newFlipX !== prevFlipX) {
+      this.setFlipX(newFlipX);
+      const direction = this.flipX ? 1 : -1;
+      this.arcadeBody.setVelocityX(direction * MAN_WALK_SPEED);
     }
   }
 }
