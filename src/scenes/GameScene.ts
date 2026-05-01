@@ -3,12 +3,12 @@ import { Seagull } from '../objects/Seagull.ts';
 import { Background } from '../objects/Background.ts';
 import { Surface } from '../objects/Surface.ts';
 import { Platform } from '../objects/Platform.ts';
-import { Food } from '../objects/Food.ts';
+import { Food} from '../objects/Food.ts';
 import { Dog } from '../objects/Dog.ts';
 import { Cat } from '../objects/Cat.ts';
 import { Man } from '../objects/Man.ts';
 import { Stone } from '../objects/Stone.ts';
-import { level1Config } from '../config/LevelConfig.ts';
+import { level1Config, BREAD, PIZZA } from '../config/LevelConfig.ts';
 import type { FoodKind } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
@@ -38,9 +38,9 @@ export class GameScene extends Phaser.Scene {
     for (const platform of level1Config.platforms) {
       Platform.preload(this, platform);
     }
-    for (const placement of level1Config.foods) {
-      Food.preload(this, placement.kind);
-    }
+    Food.preload(this, BREAD)
+    Food.preload(this, PIZZA);
+ 
     if (level1Config.backgroundMusic) {
       this.load.audio(level1Config.backgroundMusic.key, level1Config.backgroundMusic.path);
     }

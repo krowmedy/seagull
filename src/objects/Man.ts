@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { Sprite } from './Sprite.ts';
 import { Animation } from './Animation.ts';
-import { BREAD } from '../config/LevelConfig.ts';
+import { PIZZA } from '../config/LevelConfig.ts';
 import type { StompOutcome } from './Enemy.ts';
 import type { Seagull } from './Seagull.ts';
 
@@ -103,7 +103,7 @@ export class Man extends Phaser.Physics.Arcade.Sprite {
       this.scheduleAlertIfIdle();
       return { killed: false, points: 0 };
     }
-    return { killed: true, points: MAN_STOMP_POINTS, drop: BREAD };
+    return { killed: true, points: MAN_STOMP_POINTS, drop: PIZZA };
   }
 
   private activateIfDormant(): void {

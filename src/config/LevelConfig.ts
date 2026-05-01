@@ -54,6 +54,14 @@ export const BREAD: FoodKind = {
   pickupSound: { key: 'sfx-ding', path: 'assets/sounds/ding.mp3', volume: 0.01 },
 };
 
+export const PIZZA: FoodKind = {
+  textureKey: 'food-pizza',
+  imagePath: 'assets/food/pizza.png',
+  scale: 1,
+  points: 100,
+  pickupSound: { key: 'sfx-ding', path: 'assets/sounds/ding.mp3', volume: 0.01 },
+};
+
 export interface LevelConfig {
   worldWidth: number;
   worldHeight: number;
