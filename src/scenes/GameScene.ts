@@ -74,8 +74,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnPlayer(): void {
-    const { worldWidth } = level1Config;
-    const playerStartPosition = { x: worldWidth * 0.04, y: 80 };
+    // Spawn on top of the platform
+    const playerStartPosition = { x: 150, y: 80 };
     this.player = new Seagull(this, playerStartPosition.x, playerStartPosition.y);
     this.player.createAnimations();
     // Render the seagull above gameplay objects (surface, platforms, enemies, food)

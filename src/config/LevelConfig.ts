@@ -69,7 +69,7 @@ export interface LevelConfig {
 }
 
 export const level1Config: LevelConfig = {
-  worldWidth: 3840,
+  worldWidth: 6840,
   worldHeight: 540,
   surface: {
     tileKey: 'surface-breakwater',
@@ -92,10 +92,15 @@ export const level1Config: LevelConfig = {
     { kind: BREAD, x: 2200, y: 463 },
     { kind: BREAD, x: 3000, y: 463 },
     { kind: BREAD, x: 3500, y: 220 },
+     { kind: BREAD, x: 4200, y: 463 },
+    { kind: BREAD, x: 5000, y: 463 },
+    { kind: BREAD, x: 6500, y: 220 },
   ],
   dogs: [
     { x: 1200, y: 440 },
     { x: 2600, y: 440 },
+    { x: 4600, y: 440 },
+    { x: 5600, y: 440 },
   ],
   cats: [
     { x: 3300, y: 440 },
@@ -104,7 +109,7 @@ export const level1Config: LevelConfig = {
   men: [
     // Single end-of-level boss, spawned at level start but held in his Dormant
     // state until the seagull comes within MAN_ACTIVATION_RANGE.
-    { x: 3700, y: 380 },
+    { x: 6000, y: 380 },
   ],
   platforms: [
     {
