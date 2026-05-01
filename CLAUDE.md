@@ -25,6 +25,11 @@ C:\nvm4w\nodejs\npm.cmd test
 
 # Run tests in watch mode
 C:\nvm4w\nodejs\npm.cmd run test:watch
+
+# Build + deploy to ../krowmedy.github.io/seagull/
+# Wipes the target dir and copies a fresh dist/ into it (relative-base build,
+# so the bundle works at any sub-path). Does not commit or push.
+C:\nvm4w\nodejs\npm.cmd run deploy
 ```
 
 There is no linter configured yet.

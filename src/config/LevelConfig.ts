@@ -65,6 +65,7 @@ export interface LevelConfig {
   men: EnemyPlacement[];
   platforms: PlatformConfig[];
   backgroundMusic?: SoundAsset;
+  gameOverSound?: SoundAsset;
 }
 
 export const level1Config: LevelConfig = {
@@ -119,5 +120,10 @@ export const level1Config: LevelConfig = {
     key: 'level1-music',
     path: 'assets/sounds/level1_background.mp3',
     volume: 0.5,
+  },
+  gameOverSound: {
+    key: 'sfx-game-over',
+    path: 'assets/sounds/game-over.mp3',
+    volume: 0.2,
   },
 };

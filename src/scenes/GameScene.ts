@@ -44,6 +44,9 @@ export class GameScene extends Phaser.Scene {
     if (level1Config.backgroundMusic) {
       this.load.audio(level1Config.backgroundMusic.key, level1Config.backgroundMusic.path);
     }
+    if (level1Config.gameOverSound) {
+      this.load.audio(level1Config.gameOverSound.key, level1Config.gameOverSound.path);
+    }
   }
 
   create(): void {
@@ -112,12 +115,12 @@ export class GameScene extends Phaser.Scene {
 
   private spawnEnemies(): void {
     const dogs = level1Config.dogs.map(d => {
-      const dog = new Dog(this, d.x, d.y);
+      const dog = new Dog(this, d.x, d.y, this.player);
       dog.registerAnimations();
       return dog;
     });
     const cats = level1Config.cats.map(c => {
-      const cat = new Cat(this, c.x, c.y);
+      const cat = new Cat(this, c.x, c.y, this.player);
       cat.registerAnimations();
       return cat;
     });
@@ -199,6 +202,12 @@ export class GameScene extends Phaser.Scene {
     this.gameOver = true;
 
     this.sound.stopAll();
+
+    if (level1Config.gameOverSound) {
+      this.sound.play(level1Config.gameOverSound.key, {
+        volume: level1Config.gameOverSound.volume,
+      });
+    }
 
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setVelocity(0, 0);
