@@ -137,6 +137,6 @@ export const level1Config: LevelConfig = {
   gameOverSound: {
     key: 'sfx-game-over',
     path: 'assets/sounds/game-over.mp3',
-    volume: 0.2,
+    volume: 0.01,
   },
 };
