@@ -12,6 +12,7 @@ import { level1Config, BREAD, PIZZA } from '../config/LevelConfig.ts';
 import type { FoodKind } from '../config/LevelConfig.ts';
 import { CharacterState } from '../config/CharacterState.ts';
 import { BASE_HUD_TEXT_STYLE, spawnScorePopup } from '../ui/Hud.ts';
+import { Fireworks } from '../effects/Fireworks.ts';
 
 export class GameScene extends Phaser.Scene {
   private player!: Seagull;
@@ -23,6 +24,7 @@ export class GameScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
   private gameOver = false;
+  private levelComplete = false;
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -33,6 +35,7 @@ export class GameScene extends Phaser.Scene {
     Cat.preload(this);
     Man.preload(this);
     Stone.preload(this);
+    Fireworks.preload(this);
     Surface.preload(this, level1Config.surface);
     Background.preloadTextures(this, level1Config);
     for (const platform of level1Config.platforms) {
@@ -53,6 +56,7 @@ export class GameScene extends Phaser.Scene {
     // scene.restart() reuses the same instance, so class-field initializers
     // do not re-run — reset persistent state explicitly here.
     this.gameOver = false;
+    this.levelComplete = false;
     this.physics.resume();
 
     this.setupWorld();
@@ -195,6 +199,13 @@ export class GameScene extends Phaser.Scene {
     spawnScorePopup(this, food.x, food.y, food.points);
 
     food.pickup();
+
+    // Pizza is dropped only by the end-of-level man boss (Man.stomp), so
+    // collecting one means the player has just defeated the boss and grabbed
+    // the reward — end the level on a high.
+    if (food.kind === PIZZA) {
+      this.triggerLevelComplete();
+    }
   }
 
   private triggerGameOver(): void {
@@ -255,6 +266,75 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private triggerLevelComplete(): void {
+    if (this.levelComplete) return;
+    this.levelComplete = true;
+
+    this.sound.stopAll();
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    playerBody.setVelocity(0, 0);
+    playerBody.enable = false;
+    this.player.stop();
+    this.physics.pause();
+
+    Fireworks.start(this);
+
+    const baseScale = this.player.scaleX || 1;
+    this.tweens.add({
+      targets: this.player,
+      scaleX: baseScale * 1.3,
+      scaleY: baseScale * 1.3,
+      duration: 400,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+      onComplete: () => this.showLevelCompleteScreen(),
+    });
+  }
+
+  private showLevelCompleteScreen(): void {
+    const cam = this.cameras.main;
+    const cx = cam.width / 2;
+    const cy = cam.height / 2;
+
+    this.add
+      .text(cx, cy - 60, 'LEVEL COMPLETE!', {
+        ...BASE_HUD_TEXT_STYLE,
+        fontSize: 64,
+        strokeThickness: 6,
+        padding: { x: 8, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(20);
+
+    this.add
+      .text(cx, cy + 10, `Score: ${this.player.points}`, {
+        ...BASE_HUD_TEXT_STYLE,
+        fontSize: 36,
+        strokeThickness: 4,
+        padding: { x: 6, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(20);
+
+    this.add
+      .text(cx, cy + 70, 'Press any key to restart', {
+        ...BASE_HUD_TEXT_STYLE,
+        fontSize: 24,
+        strokeThickness: 3,
+        padding: { x: 6, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(20);
+
+    this.input.keyboard!.once('keydown', () => {
+      this.scene.restart();
+    });
+  }
+
   private spawnFoods(): void {
     const foods = level1Config.foods.map(f => new Food(this, f.x, f.y, f.kind));
     this.physics.add.overlap(this.player, foods, (_player, foodObj) => {
@@ -298,7 +378,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (this.gameOver) return;
+    if (this.gameOver || this.levelComplete) return;
 
     if (
       Phaser.Input.Keyboard.JustDown(this.spaceKey) ||

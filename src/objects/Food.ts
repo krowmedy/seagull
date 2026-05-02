@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import type { FoodKind } from '../config/LevelConfig.ts';
 
 export class Food extends Phaser.Physics.Arcade.Sprite {
+  readonly kind: FoodKind;
   readonly points: number;
   readonly pickupSoundKey?: string;
   readonly pickupSoundVolume?: number;
@@ -15,6 +16,7 @@ export class Food extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene: Phaser.Scene, x: number, y: number, kind: FoodKind) {
     super(scene, x, y, kind.textureKey);
+    this.kind = kind;
     this.points = kind.points;
     this.pickupSoundKey = kind.pickupSound?.key;
     this.pickupSoundVolume = kind.pickupSound?.volume;
